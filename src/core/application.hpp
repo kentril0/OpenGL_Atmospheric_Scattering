@@ -158,9 +158,6 @@ private:
 
     // ----------------------------------------------------------------------------
     // Scene
-    // TODO scene objects, scene shaders, etc.
-    // TODO resource manager?
-    // TODO active camera, walk camera
     // ----------------------------------------------------------------------------
     glm::mat4 m_projView;
 
@@ -173,5 +170,7 @@ private:
 
     std::vector<std::unique_ptr<Mesh>> meshes;
     std::unique_ptr<Shader> m_drawMeshProgram; 
+
+    std::unique_ptr<Shader> m_atmosphereProgram; 
 };
 

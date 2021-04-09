@@ -46,6 +46,8 @@ public:
 
     void reinit_vao();
 
+    void resize();
+
     uint32_t vertices() const { return m_vertices; }
     uint32_t indices() const { return m_indices; }
 
@@ -58,6 +60,7 @@ private:
     int32_t m_texCoordLoc = -1;
 
     VertexArray m_vao;
+    // TODO needed??
     std::vector<float> m_verticesData;
     std::vector<float> m_normals;
     std::vector<float> m_texCoords;

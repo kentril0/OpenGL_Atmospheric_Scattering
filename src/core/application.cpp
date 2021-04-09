@@ -13,6 +13,7 @@
 // Static variables
 // --------------------------------------------------------------------------
 
+#define PLANET_RADIUS 6360e3
 
 // --------------------------------------------------------------------------
 Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_height) 
@@ -29,8 +30,9 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
     // --------------------------------------------------------------------------
     // TODO initialize TODO
     // --------------------------------------------------------------------------
-    m_camera = std::make_unique<Camera>(float(m_width) / float(m_height));
-    cameraSetPresetSideWays();
+    m_camera = std::make_unique<Camera>(float(m_width) / float(m_height), 
+                                        glm::vec3(0.0f, 1.0f, 0.0f));
+                                        //glm::vec3(0.0f, (PLANET_RADIUS + 30), 0.0f));
     
     std::shared_ptr<Shader> shSkybox = std::make_shared<Shader>(
                                          "shaders/draw_skybox.vs", 
@@ -43,6 +45,10 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
                                          "images/skybox/bottom.jpg",
                                          "images/skybox/front.jpg",
                                          "images/skybox/back.jpg"});
+
+    m_atmosphereProgram = std::make_unique<Shader>(
+                                         "shaders/draw_atmosphere.vs", 
+                                         "shaders/draw_atmosphere.fs");
 
     m_drawMeshProgram = std::make_unique<Shader>(
                                          "shaders/draw_mesh.vs", 
@@ -75,7 +81,7 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
     // Setup OpenGL states
     // --------------------------------------------------------------------------
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
 
     set_vsync(true);
 
@@ -118,7 +124,7 @@ void Application::render()
     // --------------------------------------------------------------------------
     // Clear and reset
     // --------------------------------------------------------------------------
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, m_width, m_height);
 
@@ -131,23 +137,65 @@ void Application::render()
     // --------------------------------------------------------------------------
     // Draw the scene
     // --------------------------------------------------------------------------
-    // Get projection and view matrices defined by camera
+    // Get projection and view matrices defined by the camera
     glm::mat4 proj = m_camera->proj_matrix();
     glm::mat4 view = m_camera->view_matrix();
     m_projView = proj * view;
 
     // TODO render smth
-    m_drawMeshProgram->use();
-    m_drawMeshProgram->set_mat4("MVP",  m_projView);
-    for (auto& mesh : meshes)
-    {
-        mesh->draw();
-    }
+    //m_drawMeshProgram->use();
+    //m_drawMeshProgram->set_mat4("MVP",  m_projView);
+    //for (auto& mesh : meshes)
+    //{
+    //    mesh->draw();
+    //}
     //LOG_INFO("Done");
 
+    //glDisable(GL_DEPTH_TEST);
+    //glm::mat4 model(1.0);
+    glm::mat4 model = glm::scale(glm::mat4(1.0f), 
+                                 glm::vec3(3.0f, 
+                                           3.0f, 
+                                           3.0f));
 
+    //glm::mat4 model = glm::scale(glm::mat4(1.0f), 
+    //                             glm::vec3(PLANET_RADIUS + 60e3, 
+    //                                       PLANET_RADIUS + 60e3, 
+    //                                       PLANET_RADIUS + 60e3));
+
+    m_atmosphereProgram->use();
+
+    m_atmosphereProgram->set_mat4("M", model);
+    m_atmosphereProgram->set_mat4("MVP", proj * view * model);
+    
+    // TODO should not change
+    m_atmosphereProgram->set_vec3("viewPos", m_camera->position());
+    // Direction of the sun
+    m_atmosphereProgram->set_vec3("sunPos", glm::vec3(0, -1500, 0));
+
+    m_atmosphereProgram->set_int("viewSamples", 16);
+    m_atmosphereProgram->set_int("lightSamples", 8);
+
+    m_atmosphereProgram->set_float("I_sun", 20.f);
+    m_atmosphereProgram->set_float("R_e", 6360e3);
+    m_atmosphereProgram->set_float("R_a", 6420e3);
+
+    // Rayleight scattering coefficient
+    const glm::vec3 beta_R(3.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel implementation
+    const glm::vec3 beta_R1(5.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel web 
+    const glm::vec3 beta_R2(5.5e-3f, 15.0e-3f, 22.4e-3f);    // sky_fragment.glsl
+    m_atmosphereProgram->set_vec3("beta_R", beta_R);
+    m_atmosphereProgram->set_float("beta_M", 21e-6f);
+    m_atmosphereProgram->set_float("H_R", 7994);
+    m_atmosphereProgram->set_float("H_M", 1200);
+    m_atmosphereProgram->set_float("g", 0.76f);
+
+    /// Issues a draw call
+    meshes[0]->draw();
+
+    // TODO delete later
     // Render skybox as last
-    m_skybox->render(view, proj);
+    //m_skybox->render(view, proj);
 
     // --------------------------------------------------------------------------
     // ImGUI render

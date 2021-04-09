@@ -23,7 +23,7 @@ public:
      * @param pitch Pitch of the camera in degrees
      */
     Camera(float aspect_ratio,
-           const glm::vec3& pos = glm::vec3(0.0f, 5.0f, 0.0f), 
+           const glm::vec3& pos = glm::vec3(0.0f, 0.0f, 0.0f), 
            const glm::vec3& up = glm::vec3(0.0f, 1.0f, 0.0f),
            const glm::vec3& front = glm::vec3(0.0f, 0.0f, -1.0f),
            float yaw = DEFAULT_YAW_DEG, float pitch = DEFAULT_PITCH_DEG);

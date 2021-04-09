@@ -71,9 +71,10 @@ int main(void)
         return -1;
     }
 
-    std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-	std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-    // TODO hardware
+    LOG_INFO("Vendor: " << glGetString(GL_VENDOR));
+    LOG_INFO("Renderer: " << glGetString(GL_RENDERER));
+    LOG_INFO("OpenGL version: " << glGetString(GL_VERSION));
+	LOG_INFO("GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #if OPENGL_VERSION >= 43
