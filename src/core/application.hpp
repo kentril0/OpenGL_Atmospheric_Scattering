@@ -16,6 +16,7 @@
 
 #include "scene/skybox.hpp"
 #include "scene/camera.hpp"
+#include "scene/mesh.hpp"
 
 
 /**@brief Controls used in application */
@@ -170,6 +171,7 @@ private:
 
     std::unique_ptr<Skybox> m_skybox;
 
-
+    std::vector<std::unique_ptr<Mesh>> meshes;
+    std::unique_ptr<Shader> m_drawMeshProgram; 
 };
 

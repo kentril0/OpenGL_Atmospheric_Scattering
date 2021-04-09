@@ -37,6 +37,7 @@ static GLenum element_to_shader_type(ElementType type)
 }
 
 VertexArray::VertexArray()
+  : m_indexBuffer(nullptr)
 {
 #if OPENGL_VERSION >= 45
     glCreateVertexArrays(1, &m_id);
@@ -187,7 +188,7 @@ void VertexArray::add_vertex_buffer(const std::shared_ptr<VertexBuffer>& vbo,
         }
     }
 
-    vertex_buffers.push_back(vbo);
+    m_vertexBuffers.push_back(vbo);
 }
 
 void VertexArray::set_index_buffer(const std::shared_ptr<IndexBuffer>& ibo)
@@ -200,6 +201,6 @@ void VertexArray::set_index_buffer(const std::shared_ptr<IndexBuffer>& ibo)
     ibo->bind();
 
 #endif
-    index_buffer = ibo;
+    m_indexBuffer = ibo;
 }
 

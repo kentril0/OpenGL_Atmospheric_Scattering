@@ -34,4 +34,6 @@ rewrite file headers
 
 compile for different versions of OpenGL
 setup logfiles - LOG_ERR fncs
+    - what gpu is used, and other hardware
 links to libraries
+remove SKYBOX

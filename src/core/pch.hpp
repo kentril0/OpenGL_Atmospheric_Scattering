@@ -46,11 +46,11 @@
 #define OPENGL_VERSION 33           // GCC compatible, only integral comparison
 #define OPENGL_3_3
 
-#ifdef OPENGL_3_3
+#if defined OPENGL_3_3
     #define OPENGL_VERSION_MAJOR 3
     #define OPENGL_VERSION_MINOR 3
     #define GLSL_VERSION_STR "#version 330"
-#elif OPENGL_4_5
+#elif defined OPENGL_4_5
     #define OPENGL_VERSION_MAJOR 4
     #define OPENGL_VERSION_MINOR 5
     #define GLSL_VERSION_STR "#version 450"

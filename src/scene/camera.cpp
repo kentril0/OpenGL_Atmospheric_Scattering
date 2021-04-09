@@ -1,7 +1,7 @@
 /**********************************************************
- * < Procedural Terrain Generator >
- * @author Martin Smutny, kentril.despair@gmail.com
- * @date 20.12.2020
+ * < Interactive Atmospheric Scattering >
+ * @author Martin Smutny, xsmutn13@stud.fit.vutbr.cz
+ * @date April, 2021
  * @file camera.cpp
  * @brief FPS Camera abstraction
  *********************************************************/

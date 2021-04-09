@@ -35,13 +35,14 @@ endif()
 
 #-------------------------------------------------------------------------------
 # Set Directories
-set(IMAGES_DIR "${CMAKE_SOURCE_DIR}/images")
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
-  set(SRC_CORE_DIR "${SRC_DIR}/core")
-  set(LIBRARIES_DIR "${SRC_DIR}/libs")
-  set(SRC_OPENGL_DIR "${SRC_DIR}/opengl")
-  set(SRC_SCENE_DIR "${SRC_DIR}/scene")
-  set(SRC_SHADERS_DIR "${SRC_DIR}/shaders")
+    set(SRC_CORE_DIR    "${SRC_DIR}/core")
+    set(LIBRARIES_DIR   "${SRC_DIR}/libs")
+    set(SRC_OPENGL_DIR  "${SRC_DIR}/opengl")
+    set(SRC_SCENE_DIR   "${SRC_DIR}/scene")
+    set(SRC_SHADERS_DIR "${SRC_DIR}/shaders")
+set(IMAGES_DIR "${CMAKE_SOURCE_DIR}/images")
+set(OBJECTS_DIR "${CMAKE_SOURCE_DIR}/objects")
 
 
 #-------------------------------------------------------------------------------
@@ -160,6 +161,7 @@ set(sources
     "${SRC_OPENGL_DIR}/vertex_array.cpp"
     "${SRC_SCENE_DIR}/camera.cpp"
     "${SRC_SCENE_DIR}/skybox.cpp"
+    "${SRC_SCENE_DIR}/mesh.cpp"
 )
 
 #--------------------------------------------------------------------------------
@@ -208,4 +210,11 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
     ${IMAGES_DIR}
     ${PROJECT_BINARY_DIR}/images
     COMMENT "Copy images to build tree")
+
+# TODO maybe a bad idea
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${OBJECTS_DIR}
+    ${PROJECT_BINARY_DIR}/objects
+    COMMENT "Copy objects to build tree")
 

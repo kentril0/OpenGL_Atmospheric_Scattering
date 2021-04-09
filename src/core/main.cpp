@@ -44,7 +44,7 @@ int main(void)
         return -1;
     }
 
-    // Request OpenGL 4.5 Core context
+    // Request OpenGL context
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OPENGL_VERSION_MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OPENGL_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -70,6 +70,10 @@ int main(void)
         std::cerr << "Could not initialize OpenGL context!" << std::endl;
         return -1;
     }
+
+    std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+	std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    // TODO hardware
 
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #if OPENGL_VERSION >= 43

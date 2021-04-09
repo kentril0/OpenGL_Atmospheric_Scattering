@@ -44,6 +44,14 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
                                          "images/skybox/front.jpg",
                                          "images/skybox/back.jpg"});
 
+    m_drawMeshProgram = std::make_unique<Shader>(
+                                         "shaders/draw_mesh.vs", 
+                                         "shaders/draw_mesh.fs");
+    // Load meshes
+    meshes = Mesh::from_file("objects/sphere.obj");
+
+
+
     // --------------------------------------------------------------------------
     // Register callbacks
     // --------------------------------------------------------------------------
@@ -129,6 +137,13 @@ void Application::render()
     m_projView = proj * view;
 
     // TODO render smth
+    m_drawMeshProgram->use();
+    m_drawMeshProgram->set_mat4("MVP",  m_projView);
+    for (auto& mesh : meshes)
+    {
+        mesh->draw();
+    }
+    //LOG_INFO("Done");
 
 
     // Render skybox as last
@@ -160,6 +175,8 @@ void Application::on_resize(GLFWwindow *window, int width, int height)
 {
     m_width = width;
     m_height = height;
+    // TODO
+    // glViewport?? glViewport(0, 0, width, height);
     DERR("SCREEN RESIZE");
 }
 

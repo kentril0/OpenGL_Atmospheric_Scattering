@@ -71,25 +71,25 @@ public:
 
     const uint32_t ID() { return m_id; }
 
-    bool has_vertex_buffers() const { return !vertex_buffers.empty(); }
+    bool has_vertexBuffers() const { return !m_vertexBuffers.empty(); }
 
-    size_t total_buffers() const { return vertex_buffers.size(); }
+    size_t total_buffers() const { return m_vertexBuffers.size(); }
 
-    const std::vector<std::shared_ptr<VertexBuffer>>& get_buffers() const 
+    const std::vector<std::shared_ptr<VertexBuffer>>& buffers() const 
     { 
-        return vertex_buffers; 
+        return m_vertexBuffers; 
     }
 
-    const std::shared_ptr<IndexBuffer>& get_index_buffer() const 
+    const std::shared_ptr<IndexBuffer>& index_buffer() const 
     { 
-        return index_buffer;
+        return m_indexBuffer;
     }
 
     /** @brief Frees all the assigned vertex buffers */
-    void clear_buffers() { vertex_buffers.clear(); binding_index = 0; }
+    void clear_buffers() { m_vertexBuffers.clear(); binding_index = 0; }
 
     /** @brief Frees the assigned index buffer */
-    void clear_index() { index_buffer.reset(); }
+    void clear_index() { m_indexBuffer.reset(); }
 
     /** @brief Frees both the assigned vertex bufferss and the index buffer */
     void clear() { clear_buffers(); clear_index(); }
@@ -98,7 +98,7 @@ private:
     uint32_t m_id;
     uint32_t binding_index = 0;
 
-    std::vector<std::shared_ptr<VertexBuffer>> vertex_buffers;
-    std::shared_ptr<IndexBuffer> index_buffer;
+    std::vector<std::shared_ptr<VertexBuffer>> m_vertexBuffers;
+    std::shared_ptr<IndexBuffer> m_indexBuffer;
 };
 

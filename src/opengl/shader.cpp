@@ -79,8 +79,6 @@ void Shader::compile(const char *vert_src, const char *frag_src, const char *geo
     glDetachShader(m_id, sh_frag);
     if (geom_src != nullptr)
         glDetachShader(m_id, sh_geom);
-
-    LOG_INFO("OK");
 }
 
 void Shader::set_float(const char *name, float value)
