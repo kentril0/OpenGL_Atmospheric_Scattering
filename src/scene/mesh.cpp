@@ -142,7 +142,7 @@ std::vector<std::unique_ptr<Mesh>> Mesh::from_file(const std::string& filename,
         meshes.back()->m_normals = std::move(normals);
         meshes.back()->m_texCoords = std::move(texCoords);
         meshes.back()->m_indicesData = std::move(indices);
-        //meshes.back()->resize();
+       // meshes.back()->resize();
         meshes.back()->reinit_vao();
     }
 

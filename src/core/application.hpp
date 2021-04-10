@@ -27,7 +27,8 @@ enum Controls
     KEY_CAM_BACKWARD = GLFW_KEY_S,
     KEY_CAM_RIGHT    = GLFW_KEY_D,
     KEY_CAM_LEFT     = GLFW_KEY_A,
-    KEY_CAM_RCURSOR  = KEY_TOGGLE_MENU
+    KEY_CAM_RCURSOR  = KEY_TOGGLE_MENU,
+    KEY_CAM_SPEEDUP  = GLFW_KEY_LEFT_SHIFT 
 };
 
 
@@ -87,12 +88,13 @@ private:
     void status_window();
 
     // Camera callbacks
-    void camera_key_pressed() { m_camera->on_key_pressed(m_key, m_keyAction); }
+    //void camera_key_pressed() { m_camera->on_key_pressed(m_key, m_keyAction); }
     void camera_forward()     { m_camera->key_forward(m_keyAction); }
     void camera_backward()    { m_camera->key_backward(m_keyAction); }
     void camera_right()       { m_camera->key_right(m_keyAction); }
     void camera_left()        { m_camera->key_left(m_keyAction); }
     void camera_reset()       { m_camera->key_reset(m_keyAction); }
+    void camera_speedUp()     { m_camera->key_speedUp(m_keyAction); }
 
 private:
     // ----------------------------------------------------------------------------
@@ -162,6 +164,7 @@ private:
     glm::mat4 m_projView;
 
     std::unique_ptr<Camera> m_camera;
+
     void cameraSetPresetTop();
     void cameraSetPresetFront();
     void cameraSetPresetSideWays();
@@ -169,8 +172,52 @@ private:
     std::unique_ptr<Skybox> m_skybox;
 
     std::vector<std::unique_ptr<Mesh>> meshes;
+
     std::unique_ptr<Shader> m_drawMeshProgram; 
 
+    // ----------------------------------------------------------------------------
+    // Atmospheric constants
+    // ----------------------------------------------------------------------------
     std::unique_ptr<Shader> m_atmosphereProgram; 
+    
+    bool m_toneMapping = true;  ///< Whether tone mapping function is applied
+
+    int viewSamples;        ///< Number of samples along the view (primary) ray
+    int lightSamples;       ///< Number of samples along the light (secondary) ray
+
+    glm::vec3 sunPos;       ///< Position of the sun
+    float I_sun;            ///< Intensity of the sun
+    float R_e;              ///< Radius of the Earth
+    float R_a;              ///< Radius of the atmosphere
+    glm::vec3 beta_R;       ///< Rayleigh scattering coefficient
+    float beta_M;           ///< Mie scattering coefficient
+    float H_R;              ///< Rayleigh scale height
+    float H_M;              ///< Mie scale height
+    float g;                ///< Mie scattering direction - anisotropy of the medium
+
+    float m_sunAngle;
+    bool m_animateSun = true;
+    // ----------------------------------------------------------------------------
+    // Defaults
+    const int defViewSamples = 16;
+    const int defLightSamples = 8;
+
+    // Earth presets in [km]
+    const glm::vec3 sunDir = glm::vec3(0, 1, 0);
+    const float e_I_sun = 20.f;
+    const float e_R_e = 6360.;       // 6360e3
+    const float e_R_a = 6420.;       // 6420e3;
+    const glm::vec3 e_beta_R = glm::vec3(3.8e-3f, 13.5e-3f, 33.1e-3f);
+        //(3.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel implementation
+        //(5.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel web
+        //(5.5e-3f, 15.0e-3f, 22.4e-3f);    // 
+    const float e_beta_M = 21e-3f;          // 21e-6f
+    const float e_H_R = 7.994;            // 7994, 100
+    const float e_H_M = 1.200;            // 1200, 20
+    const float e_g = 0.76;             // 0.888
+
+    // Conversions
+    const float M_2_KM = 0.001;
+    const float KM_2_M = 1000.0;
 };
 

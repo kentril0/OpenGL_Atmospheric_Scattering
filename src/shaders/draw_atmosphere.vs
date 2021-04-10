@@ -18,8 +18,9 @@ void main()
 	gl_Position = MVP * posVec4;
 
     // TODO precompute normal matrix
-    mat3 N = transpose(inverse(mat3(M)));
-    fsNormal = normalize(N * normal);
+    //mat3 N = transpose(inverse(mat3(M)));
+    //fsNormal = normalize(N * normal);
+    //fsNormal = normalize(vec4(M * vec4(position, 0.0)).xyz);
 
     fsTexCoord = texCoord;
 }

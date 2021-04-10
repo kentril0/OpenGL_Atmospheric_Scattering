@@ -24,17 +24,21 @@ Camera::Camera(float aspect_ratio, const glm::vec3& pos, const glm::vec3& up,
     m_front(front),
     m_up(up), 
     m_aspectRatio(aspect_ratio),
-    m_fov(DEFAULT_FOV_DEG),
+    m_fov(glm::radians(60.)),
     m_nearPlane(DEFAULT_NEAR_PLANE), m_farPlane(DEFAULT_FAR_PLANE),
-    m_yaw(yaw), m_pitch(pitch),
+    m_yaw(glm::mod(yaw, MAX_YAW_DEG)), 
+    m_pitch(glm::clamp(pitch, MIN_PITCH_DEG, MAX_PITCH_DEG)),
     m_lastX(0), m_lastY(0),
     m_firstCursor(true),
     m_isForward(false),
     m_isBackward(false),
     m_isRight(false),
-    m_isLeft(false)
+    m_isLeft(false),
+    m_isSpeedUp(false),
+    m_angle(0)
 {
-
+    update();
+    LOG_INFO("m_fov: " << m_fov);
 }
 
 void Camera::on_mouse_move(double x, double y)
@@ -81,10 +85,22 @@ void Camera::update()
 void Camera::update(float dt)
 {
     float velocity = MOVE_SPEED * dt;
-    m_position += m_isForward  * m_front * velocity;
+    m_position += m_isForward  * m_front * (velocity + m_isSpeedUp * velocity * SPEEDUP_MUL); 
     m_position -= m_isBackward * m_front * velocity;
     m_position += m_isRight    * m_right * velocity;
     m_position -= m_isLeft     * m_right * velocity;
+}
+
+void Camera::updateAnim(float dt, float radius)
+{
+    float velocity = MOVE_SPEED * 0.005 * dt;
+    m_angle = glm::mod(m_angle + velocity, MAX_YAW_DEG);
+
+    m_position.y = -sinf(m_angle) * radius;
+    m_position.z = -cosf(m_angle) * radius;
+
+    m_front = glm::vec3(0, m_position.z, -m_position.y);
+
 }
 
 void Camera::on_mouse_button(int button, int action, int mods)
@@ -92,8 +108,10 @@ void Camera::on_mouse_button(int button, int action, int mods)
 
 }
 
+// TODO <UNUSED>
 void Camera::on_key_pressed(int key, int action)
 {
+    // TODO later hash map
     if (action == GLFW_PRESS)
     {           
         if (key == KEY_CAM_FORWARD)
@@ -104,13 +122,12 @@ void Camera::on_key_pressed(int key, int action)
             m_isRight = true;
         else if (key == KEY_CAM_LEFT)
             m_isLeft = true;
-        else if (key == KEY_CAM_RCURSOR)
-        {
-            m_isForward = m_isBackward = m_isRight = m_isLeft = false;
-            m_firstCursor = true;
-        }
+        else if (key == KEY_CAM_SPEEDUP)
+            m_isSpeedUp = true;
+        else if (key == KEY_CAM_RCURSOR)    // Reset cursor
+            key_reset(action);
     }
-    else if (action == GLFW_RELEASE)
+    else //if (action == GLFW_RELEASE)
     {
         if (key == KEY_CAM_FORWARD)
             m_isForward = false;
@@ -120,6 +137,9 @@ void Camera::on_key_pressed(int key, int action)
             m_isRight = false;
         else if (key == KEY_CAM_LEFT)
             m_isLeft = false;        
+        else if (key == KEY_CAM_SPEEDUP)
+            m_isSpeedUp = false;
     }
 }
+
 

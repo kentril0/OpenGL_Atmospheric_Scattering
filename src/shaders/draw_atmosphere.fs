@@ -26,6 +26,8 @@ uniform float H_M;      // Mie scale height
 uniform float g;        // Mie scattering direction - 
                         //  - anisotropy of the medium
 
+uniform float toneMappingFactor;    ///< Whether tone mapping is applied
+
 /**
  * @brief
  * @param o Origin of the ray
@@ -69,6 +71,7 @@ vec3 computeSkyColor(vec3 ray, vec3 origin)
     // Normalize the light direction
     // TODO normalize beforehand
     vec3 sunDir = normalize(sunPos);
+    ray = normalize(ray);
 
     vec2 t = raySphereIntersection(origin, ray, R_a);
     // Intersects behind
@@ -120,7 +123,6 @@ vec3 computeSkyColor(vec3 ray, vec3 origin)
 
         //--------------------------------
         // Secondary - light ray
-        
         float segmentLenLight = 
             raySphereIntersection(vSample, sunDir, R_a).y / float(lightSamples);
         float tCurrentLight = 0.0;
@@ -133,7 +135,7 @@ vec3 computeSkyColor(vec3 ray, vec3 origin)
         for (int j = 0; j < lightSamples; ++j)
         {
             // Position of the light ray sample
-            vec3 lSample = tCurrent + sunDir * 
+            vec3 lSample = vSample + sunDir * 
                            (tCurrentLight + segmentLenLight * 0.5);
             // Height of the light ray sample
             float heightLight = length(lSample) - R_e;
@@ -151,14 +153,15 @@ vec3 computeSkyColor(vec3 ray, vec3 origin)
         // Attenuation of the light for both Rayleigh and Mie optical depth
         //  Mie extenction coeff. = 1.1 of the Mie scattering coeff.
         vec3 att = exp(-(beta_R * (optDepth_R + optDepthLight_R) + 
-                         beta_M * 1.1 * (optDepth_M + optDepthLight_M)));
+                         beta_M * (optDepth_M + optDepthLight_M)));
         // Accumulate the scattering 
-        sum_R += att * h_R;
-        sum_M += att * h_M;
+        sum_R += h_R * att;
+        sum_M += h_M * att;
 
         // Next view sample
         tCurrent += segmentLen;
     }
+
     return I_sun * (sum_R * beta_R * phase_R + sum_M * beta_M * phase_M);
 }
 
@@ -168,9 +171,16 @@ void main()
 
     // Apply exposure
     // TODO tone mapping
-    //acolor = 1.0 - exp(-1.0 * acolor);
+    acolor = mix(acolor, (1.0 - exp(-1.0 * acolor)), toneMappingFactor);
 
+    //vec3 n = normalize(fsNormal);
+	//vec3 lp=vec3(0, 15000, 0);
+	//vec3 ld = normalize(fsPosition - lp);
+	//float diffuse = dot(n,-ld);
+	//diffuse = clamp(diffuse, 0, 1);
+
+    //finalColor = vec4(acolor * (1 - diffuse), 1.0);
     finalColor = vec4(acolor, 1.0);
-    //sfinalColor = vec4(0.1, 0.1, 0.1, 1.0);
+    //finalColor = vec4(0.8, 0.1, 0.1, 1.0);
 }
 

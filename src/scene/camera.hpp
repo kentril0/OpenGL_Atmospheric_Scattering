@@ -30,6 +30,8 @@ public:
 
     void update(float deltaTime);
 
+    void updateAnim(float dt, float radius);
+
     // ------------------------------------------------------------------------
     // Getters
     // ------------------------------------------------------------------------
@@ -90,7 +92,7 @@ public:
                             float far_plane)
     {
         m_aspectRatio = aspect_ratio;
-        m_fov         = glm::radians(fov);
+        m_fov         = fov;
         m_nearPlane   = near_plane;
         m_farPlane    = far_plane;
     }
@@ -116,15 +118,16 @@ public:
     void on_key_pressed(int key, int action);
 
     // TODO assumes GLFW_PRESS = 1, GLFW_RELEASE = 0
-    void key_forward(int action)  { m_isForward = action; }
+    void key_forward(int action)  { m_isForward  = action; }
     void key_backward(int action) { m_isBackward = action; }
-    void key_right(int action)    { m_isRight = action; }
-    void key_left(int action)     { m_isLeft = action; }
+    void key_right(int action)    { m_isRight    = action; }
+    void key_left(int action)     { m_isLeft     = action; }
+    void key_speedUp(int action)  { m_isSpeedUp  = action; }
 
     void key_reset(int action)
     { 
         m_firstCursor = true; 
-        m_isForward = m_isBackward = m_isRight = m_isLeft = false;
+        m_isForward = m_isBackward = m_isRight = m_isLeft = m_isSpeedUp = false;
     }
 
 private:
@@ -154,26 +157,30 @@ private:
     bool m_firstCursor;      ///< First time the cursor is registered
 
     // Active movement states of the camera 
-    bool m_isForward, m_isBackward, m_isRight, m_isLeft;
+    bool m_isForward, m_isBackward, m_isRight, m_isLeft, m_isSpeedUp;
 
     // ------------------------------------------------------------------------
     // Constants - Defaults, maximums, etc.
     // ------------------------------------------------------------------------
     inline static const float DEFAULT_YAW_DEG       = 270.0f;
-    inline static const float DEFAULT_PITCH_DEG     = 0.0f;
+    inline static const float DEFAULT_PITCH_DEG     = 20.0f;
     inline static const float DEFAULT_SPEED         = 2.5f;
 
-    inline static const float DEFAULT_FOV_DEG       = 45.0f;
+    inline static const float DEFAULT_FOV_DEG       = 60.0f;
     inline static const float DEFAULT_NEAR_PLANE    = 0.01f;
-    inline static const float DEFAULT_FAR_PLANE     = 1000.0f;
+    inline static const float DEFAULT_FAR_PLANE     = 1500.0f;
 
     inline static const float MOUSE_SENSITIVITY     = 0.1f;
     inline static const float MOVE_SPEED            = 10.0f;
+    inline static const float SPEEDUP_MUL           = 2.0f;
 
     inline static const float MAX_PITCH_DEG         = 89.0f;
     inline static const float MIN_PITCH_DEG         = -89.0f;
     inline static const float MAX_YAW_DEG           = 360.0f;
 
     inline static const glm::vec3 WORLD_UP          = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    // For animation
+    float m_angle;
 };
 

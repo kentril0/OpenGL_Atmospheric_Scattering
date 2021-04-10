@@ -13,7 +13,6 @@
 // Static variables
 // --------------------------------------------------------------------------
 
-#define PLANET_RADIUS 6360e3
 
 // --------------------------------------------------------------------------
 Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_height) 
@@ -30,9 +29,6 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
     // --------------------------------------------------------------------------
     // TODO initialize TODO
     // --------------------------------------------------------------------------
-    m_camera = std::make_unique<Camera>(float(m_width) / float(m_height), 
-                                        glm::vec3(0.0f, 1.0f, 0.0f));
-                                        //glm::vec3(0.0f, (PLANET_RADIUS + 30), 0.0f));
     
     std::shared_ptr<Shader> shSkybox = std::make_shared<Shader>(
                                          "shaders/draw_skybox.vs", 
@@ -46,23 +42,52 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
                                          "images/skybox/front.jpg",
                                          "images/skybox/back.jpg"});
 
-    m_atmosphereProgram = std::make_unique<Shader>(
-                                         "shaders/draw_atmosphere.vs", 
-                                         "shaders/draw_atmosphere.fs");
-
     m_drawMeshProgram = std::make_unique<Shader>(
                                          "shaders/draw_mesh.vs", 
                                          "shaders/draw_mesh.fs");
     // Load meshes
     meshes = Mesh::from_file("objects/sphere.obj");
 
+    m_atmosphereProgram = std::make_unique<Shader>(
+                                         "shaders/draw_atmosphere.vs", 
+                                         "shaders/draw_atmosphere.fs");
 
+    // Atmospheric scattering coefficients
+    viewSamples  = 16;
+    lightSamples = 8;
+    
+    sunPos = glm::vec3(0, 0, -1);
+    m_sunAngle = 0; //M_PI * 0.5f;
+    I_sun  = 22.0;
+
+    R_e    = 760.0;
+    R_a    = 1100.0;
+    beta_R = glm::vec3(5.5e-3f, 15.0e-3f, 22.4e-3f);
+    beta_M = 21e-3f;
+    H_R    = 100.0;
+    H_M    = 20.0;
+    g      = 0.888;
+
+    viewSamples = defViewSamples;
+    lightSamples = defLightSamples;
+    sunPos = sunDir;
+    I_sun = e_I_sun;
+    R_e = e_R_e;
+    R_a = e_R_a;
+    beta_R = e_beta_R;
+    beta_M = e_beta_M;
+    H_R = e_H_R;
+    H_M = e_H_M;
+    g = e_g;
+
+    m_camera = std::make_unique<Camera>(float(m_width) / float(m_height), 
+                                        glm::vec3(0, R_e-1, 30));
 
     // --------------------------------------------------------------------------
     // Register callbacks
     // --------------------------------------------------------------------------
     m_callbackMap = {
-        // Key,             Action,     State
+        // Key,             Action,     State           TODO lambda functions
         { {KEY_TOGGLE_MENU, GLFW_PRESS, STATE_MODIFY}, {&Application::set_state_freefly} },
         { {KEY_TOGGLE_MENU, GLFW_PRESS, STATE_FREEFLY}, {&Application::set_state_modify, 
                                                          &Application::camera_reset} },
@@ -74,14 +99,19 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
         { {KEY_CAM_RIGHT,   GLFW_PRESS, STATE_FREEFLY}, {&Application::camera_right} },
         { {KEY_CAM_RIGHT,   GLFW_RELEASE, STATE_FREEFLY}, {&Application::camera_right} },
         { {KEY_CAM_LEFT,    GLFW_PRESS, STATE_FREEFLY}, {&Application::camera_left} },
-        { {KEY_CAM_LEFT,    GLFW_RELEASE, STATE_FREEFLY}, {&Application::camera_left} }
+        { {KEY_CAM_LEFT,    GLFW_RELEASE, STATE_FREEFLY}, {&Application::camera_left} },
+        { {KEY_CAM_SPEEDUP, GLFW_PRESS, STATE_FREEFLY}, {&Application::camera_speedUp} },
+        { {KEY_CAM_SPEEDUP, GLFW_RELEASE, STATE_FREEFLY}, {&Application::camera_speedUp} }
     };
 
     // --------------------------------------------------------------------------
     // Setup OpenGL states
     // --------------------------------------------------------------------------
     glEnable(GL_DEPTH_TEST);
+    //
     //glEnable(GL_CULL_FACE);
+    	//	glEnable(GL_BLEND);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     set_vsync(true);
 
@@ -124,7 +154,7 @@ void Application::render()
     // --------------------------------------------------------------------------
     // Clear and reset
     // --------------------------------------------------------------------------
-    glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, m_width, m_height);
 
@@ -140,58 +170,59 @@ void Application::render()
     // Get projection and view matrices defined by the camera
     glm::mat4 proj = m_camera->proj_matrix();
     glm::mat4 view = m_camera->view_matrix();
-    m_projView = proj * view;
+    //glm::mat4 view(1.0);
+    //glm::mat4 proj = glm::perspective((float)(3.14159 / 4.), 
+    //                                  (float)((float)m_width/ (float)m_height), 
+    //                                  0.1f, 1000.0f);
+    //m_projView = proj * view;
 
-    // TODO render smth
-    //m_drawMeshProgram->use();
-    //m_drawMeshProgram->set_mat4("MVP",  m_projView);
-    //for (auto& mesh : meshes)
-    //{
-    //    mesh->draw();
-    //}
-    //LOG_INFO("Done");
+    glm::mat4 m = glm::scale(glm::mat4(1.0f), 
+                                 glm::vec3(R_e, 
+                                           R_e, 
+                                           R_e));
+    m_drawMeshProgram->use();
+    m_drawMeshProgram->set_mat4("MVP",  proj * view * m);
+    meshes[0]->draw();
 
-    //glDisable(GL_DEPTH_TEST);
-    //glm::mat4 model(1.0);
     glm::mat4 model = glm::scale(glm::mat4(1.0f), 
-                                 glm::vec3(3.0f, 
-                                           3.0f, 
-                                           3.0f));
-
-    //glm::mat4 model = glm::scale(glm::mat4(1.0f), 
-    //                             glm::vec3(PLANET_RADIUS + 60e3, 
-    //                                       PLANET_RADIUS + 60e3, 
-    //                                       PLANET_RADIUS + 60e3));
+                                 glm::vec3(R_a, 
+                                           R_a, 
+                                           R_a));
 
     m_atmosphereProgram->use();
-
     m_atmosphereProgram->set_mat4("M", model);
+    // TODO MVP fix
     m_atmosphereProgram->set_mat4("MVP", proj * view * model);
     
-    // TODO should not change
     m_atmosphereProgram->set_vec3("viewPos", m_camera->position());
-    // Direction of the sun
-    m_atmosphereProgram->set_vec3("sunPos", glm::vec3(0, -1500, 0));
 
-    m_atmosphereProgram->set_int("viewSamples", 16);
-    m_atmosphereProgram->set_int("lightSamples", 8);
+    if (m_animateSun)
+    {
+        m_sunAngle = glm::mod(m_sunAngle - 0.5 * m_deltaTime, M_PI + 0.1);
+        sunPos.y = glm::sin(m_sunAngle);
+        sunPos.z = glm::cos(m_sunAngle);
+    }
 
-    m_atmosphereProgram->set_float("I_sun", 20.f);
-    m_atmosphereProgram->set_float("R_e", 6360e3);
-    m_atmosphereProgram->set_float("R_a", 6420e3);
+    m_atmosphereProgram->set_vec3("sunPos", sunPos);
+
+    m_atmosphereProgram->set_int("viewSamples", viewSamples);
+    m_atmosphereProgram->set_int("lightSamples", lightSamples);
+    m_atmosphereProgram->set_float("I_sun", I_sun);
+    m_atmosphereProgram->set_float("R_e", R_e);
+    m_atmosphereProgram->set_float("R_a", R_a);
 
     // Rayleight scattering coefficient
-    const glm::vec3 beta_R(3.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel implementation
-    const glm::vec3 beta_R1(5.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel web 
-    const glm::vec3 beta_R2(5.5e-3f, 15.0e-3f, 22.4e-3f);    // sky_fragment.glsl
     m_atmosphereProgram->set_vec3("beta_R", beta_R);
-    m_atmosphereProgram->set_float("beta_M", 21e-6f);
-    m_atmosphereProgram->set_float("H_R", 7994);
-    m_atmosphereProgram->set_float("H_M", 1200);
-    m_atmosphereProgram->set_float("g", 0.76f);
+    m_atmosphereProgram->set_float("beta_M", beta_M);
+    m_atmosphereProgram->set_float("H_R", H_R);
+    m_atmosphereProgram->set_float("H_M", H_M);
+    m_atmosphereProgram->set_float("g", g);
 
-    /// Issues a draw call
+    m_atmosphereProgram->set_float("toneMappingFactor", m_toneMapping * 1.0);
+
+
     meshes[0]->draw();
+
 
     // TODO delete later
     // Render skybox as last
@@ -216,6 +247,9 @@ void Application::render()
 void Application::update()
 {
     m_camera->update(m_deltaTime);
+    // TODO
+    //if (m_animateCamera)
+    //    m_camera->updateAnim(m_deltaTime, R_e + 1);
 }
 
 
@@ -282,7 +316,7 @@ void Application::show_interface()
         if (ImGui::CollapsingHeader("Camera Settings"))
         {
             // TODO help (?)
-            static float fov = glm::radians(m_camera->field_of_view());
+            static float fov = m_camera->field_of_view();
             static float nearC = m_camera->near_plane_dist();
             static float farC = m_camera->far_plane_dist();
 
@@ -290,7 +324,7 @@ void Application::show_interface()
             float pitch = m_camera->pitch();
             float yaw = m_camera->yaw();
 
-            if (ImGui::InputFloat3("Position", glm::value_ptr(pos)))
+            if (ImGui::DragFloat3("Position", glm::value_ptr(pos)))
                 m_camera->set_position(pos);
             if (ImGui::SliderFloat("Pitch angle", &pitch, -89.f, 89.f, "%.0f deg"))
                 m_camera->set_pitch(pitch);
@@ -300,7 +334,7 @@ void Application::show_interface()
                 m_camera->set_field_of_view(fov);
             if (ImGui::SliderFloat("Near plane", &nearC, 0.f, 10.f))
                 m_camera->set_near_plane_dist(nearC);
-            if (ImGui::SliderFloat("Far plane", &farC, 100.f, 1000.f))
+            if (ImGui::SliderFloat("Far plane", &farC, 100.f, 2000.f))
                 m_camera->set_far_plane_dist(farC);
 
             // TODO camera preset positions relative to terrain size
@@ -314,116 +348,63 @@ void Application::show_interface()
 
             ImGui::NewLine();
         }
-        if (ImGui::CollapsingHeader("Atmosphere Controls", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("Atmosphere Controls", 
+                                    ImGuiTreeNodeFlags_DefaultOpen))
         {
             {
-                static int dim = 4;
-                static bool autoUpdate = false;
-                static bool falloff = true;
-                static float tileScale = 2.;
-                static float heightScale = 2.;
+              // TODO animate
+                // TODO presets or defaults
 
-                if (ImGui::Checkbox(" Falloff Map", &falloff))
-                    falloff = false;
 
-                // TODO ? with  [vertices^2]
-                ImGui::SliderInt("Terrain size", &dim, 4, 512);
-                ImGui::SliderFloat("Tile scale", &tileScale, 0.01f, 10.f);
-                ImGui::SliderFloat("Height scale", &heightScale, 0.01f, 10.f);
+                ImGui::Text("Accuracy of rays"); // ?? TODO
+                ImGui::SliderInt("View Samples", &viewSamples, 1, 64); 
+                ImGui::SliderInt("Light Samples", &lightSamples, 1, 64);
 
-                ImGui::NewLine();
-                if (ImGui::Button("Generate"))
+                ImGui::Separator();
+                ImGui::Text("Sun properties");
+                ImGui::DragFloat3("Sun Direction", glm::value_ptr(sunPos), 0.1);
+                ImGui::SliderFloat("Sun Intensity", &I_sun, 0.01, 100.);
+                ImGui::Checkbox(" Animate ", &m_animateSun);
+                ImGui::Checkbox(" Tone mapping ", &m_toneMapping);
+
+                ImGui::Separator();
+                ImGui::Text("Earth properties [km]");
+
+                ImGui::SliderFloat("Earth radius", &R_e, 1., 10000);
+                ImGui::SliderFloat("Atmosphere radius", &R_a, 1., 10000);
+
+                ImGui::Separator();
+                ImGui::Text("Rayleigh Scattering");
+                ImGui::DragFloat3("Coefficient", glm::value_ptr(beta_R), 
+                                   1e-4f, 0.0, 1.0, "%.4f");
+                ImGui::SliderFloat("Scale height", &H_R, 1.0, 1e4f);
+
+                ImGui::Separator();
+                ImGui::Text("Mie Scattering");
+                ImGui::SliderFloat("Coefficient", &beta_M, 1e-3, 1.);
+                ImGui::SliderFloat("Scale height#", &H_M, 1.0, 1e4f);
+                ImGui::SliderFloat("Anisotropy (Direction)", &g, 0.1, 1.0);
+
+
+                if (ImGui::Button("Defaults"))
                 {
-                    // TODO smth
+                    viewSamples = defViewSamples;
+                    lightSamples = defLightSamples;
+                    sunPos = sunDir;
+                    I_sun = e_I_sun;
+                    R_e = e_R_e;
+                    R_a = e_R_a;
+                    beta_R = e_beta_R;
+                    beta_M = e_beta_M;
+                    H_R = e_H_R;
+                    H_M = e_H_M;
+                    g = e_g;
                 }
-                else if (autoUpdate)
-                {
 
-                }
-                ImGui::SameLine();
-                ImGui::Checkbox("Auto", &autoUpdate);
             }
             ImGui::Separator();
-            if (ImGui::TreeNodeEx("Noise Map Generation", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                static bool autoUpdate = false;
-                int32_t seed = 0;
-                float scale = 0.1f;
-
-                if (ImGui::DragInt("Seed", &seed))
-                    seed = 1;
-                if (ImGui::DragFloat("Scale", &scale, 0.01f, 0.f, 100.f))
-                    scale = 0.1f;
-
-                // Select noise function
-                ImGui::NewLine();
-                const char* noiseTypes[] = { "Random", "Perlin", "Accumulated Perlin"};
-                static int noiseType = 0;
-                ImGui::Combo("Noise function", &noiseType, noiseTypes, 
-                             IM_ARRAYSIZE(noiseTypes));
-
-                if (noiseType == 2)
-                {
-                    int32_t octaves = 1;
-                    float persistence = 0.1f;
-                    float lacunarity = 1.f;
-                    // TODO (?)
-                    if (ImGui::SliderInt("Octaves", &octaves, 1, 32))
-                        octaves = 1;
-                    if (ImGui::DragFloat("Persistence", &persistence, 0.01f, 0.f, 1.f))
-                        persistence = 1.f;
-                    if (ImGui::DragFloat("Lacunarity", &lacunarity, 0.01f, 1.f, 100.f))
-                        lacunarity = 2.f;
-                }
-
-                // TODO (?)
-                if (ImGui::Button("  Apply  "))
-                    seed++;
-
-                ImGui::SameLine();
-                ImGui::Checkbox("Auto", &autoUpdate);
-                ImGui::TreePop();
-            }
-            ImGui::Separator();
-            if (ImGui::TreeNode("Shading"))
-            {
-                static bool usingShading = false;
-                if (ImGui::Checkbox(" Shading ", &usingShading))
-                    usingShading = false;
-
-                ImGui::Text("Directional Light");
-                ImGui::Separator();
-                static glm::vec3 lightDir      = glm::vec3(1.0f);
-                static glm::vec3 lightAmbient  = glm::vec3(1.0f);
-                static glm::vec3 lightDiffuse  = glm::vec3(1.0f);
-                static glm::vec3 lightSpecular = glm::vec3(1.0f);
-
-                ImGui::DragFloat3("Direction", glm::value_ptr(lightDir), 0.1f);
-                ImGui::ColorEdit3("Ambient",  glm::value_ptr(lightAmbient), 
-                                              ImGuiColorEditFlags_Float);
-                ImGui::ColorEdit3("Diffuse",  glm::value_ptr(lightDiffuse), 
-                                              ImGuiColorEditFlags_Float);
-                ImGui::ColorEdit3("Specular", glm::value_ptr(lightSpecular), 
-                                              ImGuiColorEditFlags_Float);
-
-                ImGui::Text("Material");
-                ImGui::Separator();
-
-                ImGui::TreePop();
-            }
         }
-        /*
-        if (ImGui::CollapsingHeader("Sky effects"))
-        {
-            static glm::vec3 light_col(1.0f);
-            static glm::vec3 fog_col(1.0f);
-            static float fog_falloff = 1.0f;
 
-            ImGui::ColorEdit3("Light color", glm::value_ptr(light_col));
-            ImGui::ColorEdit3("Fog color", glm::value_ptr(fog_col));
-            ImGui::SliderFloat("Fog falloff dist", &fog_falloff, 1.f, 1000.f);
-        }
-        */
         ImGui::End();
     }
 
