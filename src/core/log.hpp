@@ -35,18 +35,14 @@
 #define COLOR_GREEN     "\u001b[32m"
 
 extern std::ofstream logFile;
-static char ta[8];    // time array
+static char ta[16];    // time array
 
-/**
- * @brief Returns current system time
- */
-void inline curtime()
-{
-    std::time_t rawtime = time(NULL);
-    struct std::tm* ptm = localtime(&rawtime);
-    sprintf(ta, "%02d:%02d:%02d", ptm->tm_hour,
-           ptm->tm_min, ptm->tm_sec);
-}
+/** @brief Get current system time */
+#define CURTIME() do {                          \
+    std::time_t rawtime = time(NULL);           \
+    struct std::tm* ptm = localtime(&rawtime);  \
+    sprintf(ta, "[%02d:%02d:%02d]: ", ptm->tm_hour,  \
+            ptm->tm_min, ptm->tm_sec); } while(0)
 
 // ----------------------------------------
 // ASSERT
@@ -60,9 +56,9 @@ void inline curtime()
 ///< LOG_OK(text)
 #if LOG_LEVEL <= LEVEL_OK
     #define LOG_OK(x) do {                              \
-        curtime();                                      \
-        std::cerr << COLOR_GREEN << '[' << ta << "]: "   \
-                  << x << COLOR_NORMAL << std::endl; } while(0)
+        CURTIME();                                      \
+        std::cerr << COLOR_GREEN << ta << x             \
+                  << COLOR_NORMAL << std::endl; } while(0)
 #else
     #define LOG_OK(x) do { } while(0)
 #endif
@@ -71,9 +67,9 @@ void inline curtime()
 ///< LOG_INFO(text)
 #if LOG_LEVEL <= LEVEL_INFO
     #define LOG_INFO(x) do {                                \
-        curtime();                                          \
-        std::cerr << '[' << ta << "]: " << x << std::endl;  \
-        logFile << '[' << ta << "]: " << x << std::endl; } while(0)
+        CURTIME();                                          \
+        std::cerr << ta << x << std::endl;                  \
+        logFile << ta << x << std::endl; } while(0)
 #else
     #define LOG_INFO(x) do { } while(0)
 #endif
@@ -82,8 +78,8 @@ void inline curtime()
 ///< LOG_WARN(text)
 #if LOG_LEVEL <= LEVEL_WARNING
     #define LOG_WARN(x) do {                                            \
-        curtime();                                          \
-        std::cerr << COLOR_YELLOW << '[' << ta << "]: WARNING: " \
+        CURTIME();                                          \
+        std::cerr << COLOR_YELLOW << ta << "WARNING: " \
                   << x << COLOR_NORMAL << std::endl; } while(0)
 #else
     #define LOG_WARN(x) do { } while(0)
@@ -93,8 +89,8 @@ void inline curtime()
 ///< LOG_ERR(text)
 #if LOG_LEVEL <= LEVEL_ERROR
     #define LOG_ERR(x) do {                                         \
-        curtime();                                          \
-        std::cerr << COLOR_RED << '[' << ta << "]: ERROR: "  \
+        CURTIME();                                          \
+        std::cerr << COLOR_RED << ta << "ERROR: "  \
                   << x << COLOR_NORMAL << std::endl; } while(0)
 #else
     #define LOG_ERR(x) do { } while(0)
