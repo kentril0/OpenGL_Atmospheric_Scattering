@@ -38,7 +38,6 @@ int main(void)
     const size_t initial_height = SCREEN_INIT_HEIGHT;
 
     // Initialize error log file
-    rawtime = time(NULL);
     logFile.open(LOG_FILE);
 
     // TODO logfile for errors

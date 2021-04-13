@@ -35,8 +35,6 @@
 #define COLOR_GREEN     "\u001b[32m"
 
 extern std::ofstream logFile;
-extern std::time_t rawtime;
-
 static char ta[8];    // time array
 
 /**
@@ -44,9 +42,7 @@ static char ta[8];    // time array
  */
 void inline curtime()
 {
-    //std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    //return std::put_time((localtime(&now)), "%T");
-    //return std::put_time(localtime(&rawtime), "%T");
+    std::time_t rawtime = time(NULL);
     struct std::tm* ptm = localtime(&rawtime);
     sprintf(ta, "%02d:%02d:%02d", ptm->tm_hour,
            ptm->tm_min, ptm->tm_sec);
