@@ -5,8 +5,8 @@ layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 texCoord;
 
 out vec3 fsPosition;
-out vec3 fsNormal;
-out vec2 fsTexCoord;
+//out vec3 fsNormal;
+//out vec2 fsTexCoord;
 
 uniform mat4 M;     // Model matrix
 uniform mat4 MVP;   // Model - View - Projection matrix

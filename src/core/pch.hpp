@@ -67,5 +67,3 @@
 // TODO initial screen dimensions
 #define SCREEN_INIT_WIDTH  1280
 #define SCREEN_INIT_HEIGHT 720 
-
-

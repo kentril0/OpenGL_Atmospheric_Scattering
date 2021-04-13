@@ -124,7 +124,7 @@ int main(void)
             // Poll for and process events
             glfwPollEvents();
         }
-    }   // Application is freed here, before GLFW
+    }   // Application is freed here
 
     //-------------------------------------------------------------------------
     // ImGUI cleanup

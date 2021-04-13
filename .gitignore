@@ -3,6 +3,7 @@
 build
 texts
 .vscode
+doc/images
 
 # Custom files
 *.swp

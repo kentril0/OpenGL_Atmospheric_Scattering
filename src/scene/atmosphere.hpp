@@ -251,25 +251,25 @@ private:
 
     // ----------------------------------------------------------------------------
     // Defaults
-    const int defViewSamples = 16;
-    const int defLightSamples = 8;
-    const float defSunAngle = glm::radians(1.f);
+    inline static const int defViewSamples = 16;
+    inline static const int defLightSamples = 8;
+    inline static const float defSunAngle = glm::radians(1.f);
 
-    const glm::vec3 defSunDir = glm::vec3(0, 1, 0);
+    inline static const glm::vec3 defSunDir = glm::vec3(0, 1, 0);
 
     // Earth presets in [km]
-    const float e_I_sun = 20.f;
-    const float e_R_e = 6360.;       // 6360e3
-    const float e_R_a = 6420.;       // 6420e3;
-    const glm::vec3 e_beta_R = glm::vec3(5.8e-3f, 13.5e-3f, 33.1e-3f);
-        //(3.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel implementation
-        //(5.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel web
-    const float e_beta_M = 21e-3f;          // 21e-6f
-    const float e_H_R = 7.994;            // 7994, 100
-    const float e_H_M = 1.200;            // 1200, 20
-    const float e_g = 0.888;
+    inline static const float e_I_sun = 20.f;
+    inline static const float e_R_e = 6360.;       // 6360e3
+    inline static const float e_R_a = 6420.;       // 6420e3;
+    inline static const glm::vec3 e_beta_R = glm::vec3(5.8e-3f, 13.5e-3f, 33.1e-3f);
+                      //(3.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel implementation
+                      //(5.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel web
+    inline static const float e_beta_M = 21e-3f;          // 21e-6f
+    inline static const float e_H_R = 7.994;            // 7994, 100
+    inline static const float e_H_M = 1.200;            // 1200, 20
+    inline static const float e_g = 0.888;
 
     // Conversions
-    const float M_2_KM = 0.001;
-    const float KM_2_M = 1000.0;
+    inline static const float M_2_KM = 0.001;
+    inline static const float KM_2_M = 1000.0;
 };

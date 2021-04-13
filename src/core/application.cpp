@@ -126,7 +126,7 @@ void Application::render()
     glViewport(0, 0, m_width, m_height);
 
     // --------------------------------------------------------------------------
-    // Sart the Dear ImGUI frame
+    // Sart the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -157,14 +157,8 @@ void Application::update()
     m_camera->update(m_deltaTime);
 
     // Get projection and view matrices defined by the camera
-    //m_projView = m_camera->proj_matrix() * m_camera->view_matrix();
-
     m_atmosphere->set_projView(m_camera->proj_matrix(), m_camera->view_matrix());
     m_atmosphere->set_viewPos(m_camera->position());
-
-    // TODO
-    //if (m_animateCamera)
-    //    m_camera->updateAnim(m_deltaTime, R_e + 1);
 }
 
 void Application::show_interface()
@@ -205,7 +199,7 @@ void Application::show_interface()
                 m_camera->set_field_of_view(fov);
             if (ImGui::SliderFloat("Near plane", &nearC, 0.f, 10.f))
                 m_camera->set_near_plane_dist(nearC);
-            if (ImGui::SliderFloat("Far plane", &farC, 100.f, 3000.f))
+            if (ImGui::SliderFloat("Far plane", &farC, 100.f, 9000.f))
                 m_camera->set_far_plane_dist(farC);
 
             // TODO camera preset positions relative to the ground
@@ -223,6 +217,8 @@ void Application::show_interface()
             static glm::vec3 sunDir = m_atmosphere->get_sunDir();
             static float R_e = m_atmosphere->get_earthRadius();
             static float R_a = m_atmosphere->get_atmosRadius();
+            static int viewSamples = m_atmosphere->get_viewSamples();
+            static int lightSamples = m_atmosphere->get_lightSamples();
 
             if (ImGui::TreeNodeEx("Optical coefficients", 
                 ImGuiTreeNodeFlags_DefaultOpen))
@@ -252,6 +248,7 @@ void Application::show_interface()
                 if (ImGui::SliderAngle("Sun Angle", &sunAngle, -10.f, 190.f)) {
                     m_atmosphere->set_animateSun(false);
                     m_atmosphere->set_sunAngle(sunAngle);
+                    sunDir = m_atmosphere->get_sunDir();
                 }
                 if (ImGui::Checkbox(" Animate ", &animateSun)) {
                     m_atmosphere->set_animateSun(animateSun);
@@ -273,7 +270,7 @@ void Application::show_interface()
                 HelpMarker("Scattering coefficient for wavelengths of red, green,\n"
                            "and blue light.\n"
                            "The less for a certain wavelength, the more prominent\n"
-                           "(less out-scattered) its color, in [m^-1]");
+                           "(more scattered towards the camera) its color, in [m^-1]");
                 if (ImGui::SliderFloat("Scale height", &H_R, 1.0, R_a - R_e)) {
                     m_atmosphere->set_rayleighScaleHeight(H_R);
                 }
@@ -291,11 +288,12 @@ void Application::show_interface()
                     H_M = m_atmosphere->get_mieScaleHeight();
                     g = m_atmosphere->get_mieScatteringDir();
                 }
-                if (ImGui::SliderFloat("Coefficient", &beta_M, 1e-3f, 1.f)) {
+                //if (ImGui::SliderFloat("Coefficient", &beta_M, 1e-4f, 0.1f, "%.4f")) {
+                if (ImGui::DragFloat("Coefficient", &beta_M, 1e-4f, 0.f, 1.0f, "%.4f")) {
                     m_atmosphere->set_mieScattering(beta_M);
                 }
                 HelpMarker("Scattering coefficient for wavelength of visible light,\n"
-                           "the higher the value, the foggier it gets, in [m^-1]");
+                           "higher the value, bigger the fog cloud, in [m^-1]");
                 if (ImGui::SliderFloat("Scale height##mie", &H_M, 1.0f, R_a - R_e)) {
                     m_atmosphere->set_mieScaleHeight(H_M);
                 }
@@ -320,6 +318,8 @@ void Application::show_interface()
                     H_M = m_atmosphere->get_mieScaleHeight();
                     g = m_atmosphere->get_mieScatteringDir();
                     sunAngle = m_atmosphere->get_sunAngle();
+                    viewSamples = m_atmosphere->get_viewSamples();
+                    lightSamples = m_atmosphere->get_lightSamples();
                 }
                 ImGui::TreePop();
             }
@@ -327,8 +327,6 @@ void Application::show_interface()
             ImGui::Separator();
             if (ImGui::TreeNode("Render options (Dangerous)"))
             {
-                static int viewSamples = m_atmosphere->get_viewSamples();
-                static int lightSamples = m_atmosphere->get_lightSamples();
                 static bool toneMapping = m_atmosphere->is_toneMapping();
                 static bool renderEarth = m_atmosphere->is_renderEarth();
 
@@ -408,8 +406,9 @@ void Application::on_resize(GLFWwindow *window, int width, int height)
 {
     m_width = width;
     m_height = height;
+
     // TODO
-    // glViewport?? glViewport(0, 0, width, height);
+    //glViewport(0, 0, width, height);
 }
 
 void Application::on_mouse_move(GLFWwindow *window, double x, double y) 

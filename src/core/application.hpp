@@ -154,7 +154,7 @@ private:
     enum States     ///< Application states, determines 
     {
         STATE_MODIFY,   ///< GUI is shown and allows for modifications
-        STATE_FREEFLY   ///< GUI is hidden, camera is moving freely
+        STATE_FREEFLY   ///< GUI is hidden, camera moves freely
     };
 
     int m_state;    ///< Current app state

@@ -3,8 +3,8 @@
 #define M_PI 3.1415926535897932384626433832795
 
 in vec3 fsPosition;     // Position of the fragment
-in vec3 fsNormal;
-in vec2 fsTexCoord;
+//in vec3 fsNormal;
+//in vec2 fsTexCoord;
 
 out vec4 finalColor;
 
