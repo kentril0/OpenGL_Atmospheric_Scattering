@@ -31,9 +31,6 @@ Probably need to install packages:
 
 ## TODO
 rewrite file headers
-
 compile for different versions of OpenGL
-setup logfiles - LOG_ERR fncs
-    - what gpu is used, and other hardware
+setup logfiles, fix on windows
 links to libraries
-remove SKYBOX
