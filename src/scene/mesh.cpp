@@ -142,7 +142,6 @@ std::vector<std::unique_ptr<Mesh>> Mesh::from_file(const std::string& filename,
         meshes.back()->m_normals = std::move(normals);
         meshes.back()->m_texCoords = std::move(texCoords);
         meshes.back()->m_indicesData = std::move(indices);
-       // meshes.back()->resize();
         meshes.back()->reinit_vao();
     }
 
@@ -159,68 +158,3 @@ void Mesh::draw() const
     else
         glDrawElements(m_drawMode, m_indices, GL_UNSIGNED_INT, nullptr);
 }
-
-// TODO REMOVE
-void Mesh::resize()
-{
-	float minX, minY, minZ;
-	float maxX, maxY, maxZ;
-	float scaleX, scaleY, scaleZ;
-	float shiftX, shiftY, shiftZ;
-	float epsilon = 0.001f;
-
-	minX = minY = minZ = 1.1754E+38F;
-	maxX = maxY = maxZ = -1.1754E+38F;
-
-	// Go through all vertices to determine min and max of each dimension
-	for (size_t v = 0; v < m_vertices; ++v)
-	{
-		if (m_verticesData[3 * v + 0] < minX) minX = m_verticesData[3 * v + 0];
-		if (m_verticesData[3 * v + 0] > maxX) maxX = m_verticesData[3 * v + 0];
-
-		if (m_verticesData[3 * v + 1] < minY) minY = m_verticesData[3 * v + 1];
-		if (m_verticesData[3 * v + 1] > maxY) maxY = m_verticesData[3 * v + 1];
-
-		if (m_verticesData[3 * v + 2] < minZ) minZ = m_verticesData[3 * v + 2];
-		if (m_verticesData[3 * v + 2] > maxZ) maxZ = m_verticesData[3 * v + 2];
-	}
-
-	// From min and max compute necessary scale and shift for each dimension
-	float maxExtent, xExtent, yExtent, zExtent;
-	xExtent = maxX - minX;
-	yExtent = maxY - minY;
-	zExtent = maxZ - minZ;
-	if (xExtent >= yExtent && xExtent >= zExtent)
-	{
-		maxExtent = xExtent;
-	}
-	if (yExtent >= xExtent && yExtent >= zExtent)
-	{
-		maxExtent = yExtent;
-	}
-	if (zExtent >= xExtent && zExtent >= yExtent)
-	{
-		maxExtent = zExtent;
-	}
-	scaleX = 2.0f / maxExtent;
-	shiftX = minX + (xExtent / 2.0f);
-	scaleY = 2.0f / maxExtent;
-	shiftY = minY + (yExtent / 2.0f);
-	scaleZ = 2.0f / maxExtent;
-	shiftZ = minZ + (zExtent / 2.0f);
-
-	// Go through all verticies shift and scale them
-	for (size_t v = 0; v < m_verticesData.size() / 3; v++)
-	{
-		m_verticesData[3 * v + 0] = (m_verticesData[3 * v + 0] - shiftX) * scaleX;
-		assert(m_verticesData[3 * v + 0] >= -1.0f - epsilon);
-		assert(m_verticesData[3 * v + 0] <= 1.0f + epsilon);
-		m_verticesData[3 * v + 1] = (m_verticesData[3 * v + 1] - shiftY) * scaleY;
-		assert(m_verticesData[3 * v + 1] >= -1.0f - epsilon);
-		assert(m_verticesData[3 * v + 1] <= 1.0f + epsilon);
-		m_verticesData[3 * v + 2] = (m_verticesData[3 * v + 2] - shiftZ) * scaleZ;
-		assert(m_verticesData[3 * v + 2] >= -1.0f - epsilon);
-		assert(m_verticesData[3 * v + 2] <= 1.0f + epsilon);
-	}
-}
-
