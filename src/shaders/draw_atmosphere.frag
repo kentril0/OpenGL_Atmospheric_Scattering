@@ -29,11 +29,11 @@ uniform float g;        // Mie scattering direction -
 uniform float toneMappingFactor;    ///< Whether tone mapping is applied
 
 /**
- * @brief
+ * @brief Computes intersection between a ray and a sphere
  * @param o Origin of the ray
  * @param d Direction of the ray
  * @param r Radius of the sphere
- * @return Roots
+ * @return Roots depending on the intersection
  */
 vec2 raySphereIntersection(vec3 o, vec3 d, float r)
 {
@@ -60,11 +60,10 @@ vec2 raySphereIntersection(vec3 o, vec3 d, float r)
 }
 
 /**
- * @brief TODO
- * @param ray Ray direction norm(fsPosition - viewPos)
- * @param origin Origin of the ray "r"
- * @return 
- * TODO CONSTS
+ * @brief Function to compute color of a certain view ray
+ * @param ray Direction of the view ray
+ * @param origin Origin of the view ray
+ * @return color of the view ray
  */
 vec3 computeSkyColor(vec3 ray, vec3 origin)
 {
@@ -167,18 +166,8 @@ void main()
 {
     vec3 acolor = computeSkyColor(normalize(fsPosition - viewPos), viewPos);
 
-    // Apply exposure
-    // TODO tone mapping
+    // Apply tone mapping
     acolor = mix(acolor, (1.0 - exp(-1.0 * acolor)), toneMappingFactor);
 
-    //vec3 n = normalize(fsNormal);
-	//vec3 lp=vec3(0, 15000, 0);
-	//vec3 ld = normalize(fsPosition - lp);
-	//float diffuse = dot(n,-ld);
-	//diffuse = clamp(diffuse, 0, 1);
-
-    //finalColor = vec4(acolor * (1 - diffuse), 1.0);
     finalColor = vec4(acolor, 1.0);
-    //finalColor = vec4(0.8, 0.1, 0.1, 1.0);
 }
-

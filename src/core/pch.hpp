@@ -44,8 +44,8 @@
 
 
 // TODO OpenGL version
-#define OPENGL_VERSION 45           // GCC compatible, only integral comparison
-#define OPENGL_4_5
+#define OPENGL_VERSION 33           // GCC compatible, only integral comparison
+#define OPENGL_3_3
 
 
 #if defined OPENGL_3_3
