@@ -174,7 +174,6 @@ void Application::on_resize(GLFWwindow *window, int width, int height)
     m_height = height;
     // TODO
     // glViewport?? glViewport(0, 0, width, height);
-    DERR("SCREEN RESIZE");
 }
 
 void Application::on_mouse_move(GLFWwindow *window, double x, double y) 

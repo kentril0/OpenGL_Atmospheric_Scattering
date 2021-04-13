@@ -1,7 +1,7 @@
 /**********************************************************
- * < Procedural Terrain Generator >
- * @author Martin Smutny, kentril.despair@gmail.com
- * @date 20.12.2020
+ * < Interactive Atmospheric Scattering >
+ * @author Martin Smutny, xsmutn13@stud.fit.vutbr.cz
+ * @date April, 2021
  * @file log.hpp
  * @brief Logging and debugging functions
  *********************************************************/
@@ -9,7 +9,6 @@
 #pragma once
 
 #include <fstream>
-#include <chrono>
 #include <ctime>
 #include <iomanip>
 
@@ -36,14 +35,21 @@
 #define COLOR_GREEN     "\u001b[32m"
 
 extern std::ofstream logFile;
+extern std::time_t rawtime;
+
+static char ta[8];    // time array
 
 /**
  * @brief Returns current system time
  */
-auto inline curtime()
+void inline curtime()
 {
-    std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    return std::put_time((localtime(&now)), "%T");
+    //std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    //return std::put_time((localtime(&now)), "%T");
+    //return std::put_time(localtime(&rawtime), "%T");
+    struct std::tm* ptm = localtime(&rawtime);
+    sprintf(ta, "%02d:%02d:%02d", ptm->tm_hour,
+           ptm->tm_min, ptm->tm_sec);
 }
 
 // ----------------------------------------
@@ -57,8 +63,9 @@ auto inline curtime()
 // ----------------------------------------
 ///< LOG_OK(text)
 #if LOG_LEVEL <= LEVEL_OK
-    #define LOG_OK(x) do {                                      \
-        std::cerr << COLOR_GREEN << '[' << curtime() << "]: "   \
+    #define LOG_OK(x) do {                              \
+        curtime();                                      \
+        std::cerr << COLOR_GREEN << '[' << ta << "]: "   \
                   << x << COLOR_NORMAL << std::endl; } while(0)
 #else
     #define LOG_OK(x) do { } while(0)
@@ -67,9 +74,10 @@ auto inline curtime()
 // ----------------------------------------
 ///< LOG_INFO(text)
 #if LOG_LEVEL <= LEVEL_INFO
-    #define LOG_INFO(x) do {                                                 \
-        std::cerr << '[' << curtime() << "]: " << x << std::endl;  \
-        logFile << '[' << curtime() << "]: " << x << std::endl; } while(0)
+    #define LOG_INFO(x) do {                                \
+        curtime();                                          \
+        std::cerr << '[' << ta << "]: " << x << std::endl;  \
+        logFile << '[' << ta << "]: " << x << std::endl; } while(0)
 #else
     #define LOG_INFO(x) do { } while(0)
 #endif
@@ -78,7 +86,8 @@ auto inline curtime()
 ///< LOG_WARN(text)
 #if LOG_LEVEL <= LEVEL_WARNING
     #define LOG_WARN(x) do {                                            \
-        std::cerr << COLOR_YELLOW << '[' << curtime() << "]: WARNING: " \
+        curtime();                                          \
+        std::cerr << COLOR_YELLOW << '[' << ta << "]: WARNING: " \
                   << x << COLOR_NORMAL << std::endl; } while(0)
 #else
     #define LOG_WARN(x) do { } while(0)
@@ -88,7 +97,8 @@ auto inline curtime()
 ///< LOG_ERR(text)
 #if LOG_LEVEL <= LEVEL_ERROR
     #define LOG_ERR(x) do {                                         \
-        std::cerr << COLOR_RED << '[' << curtime() << "]: ERROR: "  \
+        curtime();                                          \
+        std::cerr << COLOR_RED << '[' << ta << "]: ERROR: "  \
                   << x << COLOR_NORMAL << std::endl; } while(0)
 #else
     #define LOG_ERR(x) do { } while(0)

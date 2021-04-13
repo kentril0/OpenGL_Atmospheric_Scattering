@@ -13,6 +13,7 @@
 #include <GLFW/glfw3.h>
 
 std::ofstream logFile;
+std::time_t rawtime;
 
 // GLFW handler functions
 void on_resize(GLFWwindow *window, int width, int height);
@@ -37,6 +38,7 @@ int main(void)
     const size_t initial_height = SCREEN_INIT_HEIGHT;
 
     // Initialize error log file
+    rawtime = time(NULL);
     logFile.open(LOG_FILE);
 
     // TODO logfile for errors
