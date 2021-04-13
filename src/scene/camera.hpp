@@ -168,7 +168,7 @@ private:
 
     inline static const float DEFAULT_FOV_DEG       = 60.0f;
     inline static const float DEFAULT_NEAR_PLANE    = 0.01f;
-    inline static const float DEFAULT_FAR_PLANE     = 1500.0f;
+    inline static const float DEFAULT_FAR_PLANE     = 2200.0f;
 
     inline static const float MOUSE_SENSITIVITY     = 0.1f;
     inline static const float MOVE_SPEED            = 10.0f;

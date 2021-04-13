@@ -69,9 +69,7 @@ vec2 raySphereIntersection(vec3 o, vec3 d, float r)
 vec3 computeSkyColor(vec3 ray, vec3 origin)
 {
     // Normalize the light direction
-    // TODO normalize beforehand
     vec3 sunDir = normalize(sunPos);
-    ray = normalize(ray);
 
     vec2 t = raySphereIntersection(origin, ray, R_a);
     // Intersects behind
@@ -153,7 +151,7 @@ vec3 computeSkyColor(vec3 ray, vec3 origin)
         // Attenuation of the light for both Rayleigh and Mie optical depth
         //  Mie extenction coeff. = 1.1 of the Mie scattering coeff.
         vec3 att = exp(-(beta_R * (optDepth_R + optDepthLight_R) + 
-                         beta_M * (optDepth_M + optDepthLight_M)));
+                         beta_M * 1.1f * (optDepth_M + optDepthLight_M)));
         // Accumulate the scattering 
         sum_R += h_R * att;
         sum_M += h_M * att;

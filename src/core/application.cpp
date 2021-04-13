@@ -10,8 +10,9 @@
 #include "application.hpp"
 
 // --------------------------------------------------------------------------
-// Static variables
+// Static members
 // --------------------------------------------------------------------------
+static void HelpMarker(const char* desc);
 
 
 // --------------------------------------------------------------------------
@@ -19,7 +20,8 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
   : m_window(w),
     m_width(initial_width), 
     m_height(initial_height),
-    m_state(STATE_MODIFY)
+    m_state(STATE_MODIFY),
+    m_totalVertices(0), m_totalIndices(0)
 {
     LOG_INFO("Screen Dimensions: " << m_width << " x " << m_height);
 
@@ -30,58 +32,24 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
     // TODO initialize TODO
     // --------------------------------------------------------------------------
     
-    std::shared_ptr<Shader> shSkybox = std::make_shared<Shader>(
-                                         "shaders/draw_skybox.vs", 
-                                         "shaders/draw_skybox.fs");
-    m_skybox = std::make_unique<Skybox>(shSkybox, 
-                                        std::initializer_list<const char*>{
-                                         "images/skybox/right.jpg",
-                                         "images/skybox/left.jpg",
-                                         "images/skybox/top.jpg",
-                                         "images/skybox/bottom.jpg",
-                                         "images/skybox/front.jpg",
-                                         "images/skybox/back.jpg"});
-
-    m_drawMeshProgram = std::make_unique<Shader>(
-                                         "shaders/draw_mesh.vs", 
-                                         "shaders/draw_mesh.fs");
+    m_drawMeshProgram = std::make_shared<Shader>(
+                                         "shaders/draw_mesh.vert", 
+                                         "shaders/draw_mesh.frag");
     // Load meshes
-    meshes = Mesh::from_file("objects/sphere.obj");
+    m_meshes = Mesh::from_file("objects/sphere.obj");
 
-    m_atmosphereProgram = std::make_unique<Shader>(
-                                         "shaders/draw_atmosphere.vs", 
-                                         "shaders/draw_atmosphere.fs");
+    for (auto& mesh : m_meshes) {
+        m_totalVertices += mesh->vertices();
+        m_totalIndices += mesh->indices();
+    }
 
-    // Atmospheric scattering coefficients
-    viewSamples  = 16;
-    lightSamples = 8;
-    
-    sunPos = glm::vec3(0, 0, -1);
-    m_sunAngle = 0; //M_PI * 0.5f;
-    I_sun  = 22.0;
-
-    R_e    = 760.0;
-    R_a    = 1100.0;
-    beta_R = glm::vec3(5.5e-3f, 15.0e-3f, 22.4e-3f);
-    beta_M = 21e-3f;
-    H_R    = 100.0;
-    H_M    = 20.0;
-    g      = 0.888;
-
-    viewSamples = defViewSamples;
-    lightSamples = defLightSamples;
-    sunPos = sunDir;
-    I_sun = e_I_sun;
-    R_e = e_R_e;
-    R_a = e_R_a;
-    beta_R = e_beta_R;
-    beta_M = e_beta_M;
-    H_R = e_H_R;
-    H_M = e_H_M;
-    g = e_g;
+    m_atmosphere = std::make_unique<Atmosphere>(m_drawMeshProgram, 
+                                                m_meshes[0].get());
 
     m_camera = std::make_unique<Camera>(float(m_width) / float(m_height), 
-                                        glm::vec3(0, R_e-1, 30));
+                                        glm::vec3(0, 
+                                                  m_atmosphere->get_earthRadius() -1,
+                                                  30));
 
     // --------------------------------------------------------------------------
     // Register callbacks
@@ -108,13 +76,11 @@ Application::Application(GLFWwindow* w, size_t initial_width, size_t initial_hei
     // Setup OpenGL states
     // --------------------------------------------------------------------------
     glEnable(GL_DEPTH_TEST);
-    //
     //glEnable(GL_CULL_FACE);
-    	//	glEnable(GL_BLEND);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     set_vsync(true);
-
 
     // --------------------------------------------------------------------------
     // Get current timestamp - prepare for main loop
@@ -156,6 +122,7 @@ void Application::render()
     // --------------------------------------------------------------------------
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // TODO only in resize?
     glViewport(0, 0, m_width, m_height);
 
     // --------------------------------------------------------------------------
@@ -167,66 +134,7 @@ void Application::render()
     // --------------------------------------------------------------------------
     // Draw the scene
     // --------------------------------------------------------------------------
-    // Get projection and view matrices defined by the camera
-    glm::mat4 proj = m_camera->proj_matrix();
-    glm::mat4 view = m_camera->view_matrix();
-    //glm::mat4 view(1.0);
-    //glm::mat4 proj = glm::perspective((float)(3.14159 / 4.), 
-    //                                  (float)((float)m_width/ (float)m_height), 
-    //                                  0.1f, 1000.0f);
-    //m_projView = proj * view;
-
-    glm::mat4 m = glm::scale(glm::mat4(1.0f), 
-                                 glm::vec3(R_e, 
-                                           R_e, 
-                                           R_e));
-    m_drawMeshProgram->use();
-    m_drawMeshProgram->set_mat4("MVP",  proj * view * m);
-    meshes[0]->draw();
-
-    glm::mat4 model = glm::scale(glm::mat4(1.0f), 
-                                 glm::vec3(R_a, 
-                                           R_a, 
-                                           R_a));
-
-    m_atmosphereProgram->use();
-    m_atmosphereProgram->set_mat4("M", model);
-    // TODO MVP fix
-    m_atmosphereProgram->set_mat4("MVP", proj * view * model);
-    
-    m_atmosphereProgram->set_vec3("viewPos", m_camera->position());
-
-    if (m_animateSun)
-    {
-        m_sunAngle = glm::mod(m_sunAngle - 0.5 * m_deltaTime, M_PI + 0.1);
-        sunPos.y = glm::sin(m_sunAngle);
-        sunPos.z = glm::cos(m_sunAngle);
-    }
-
-    m_atmosphereProgram->set_vec3("sunPos", sunPos);
-
-    m_atmosphereProgram->set_int("viewSamples", viewSamples);
-    m_atmosphereProgram->set_int("lightSamples", lightSamples);
-    m_atmosphereProgram->set_float("I_sun", I_sun);
-    m_atmosphereProgram->set_float("R_e", R_e);
-    m_atmosphereProgram->set_float("R_a", R_a);
-
-    // Rayleight scattering coefficient
-    m_atmosphereProgram->set_vec3("beta_R", beta_R);
-    m_atmosphereProgram->set_float("beta_M", beta_M);
-    m_atmosphereProgram->set_float("H_R", H_R);
-    m_atmosphereProgram->set_float("H_M", H_M);
-    m_atmosphereProgram->set_float("g", g);
-
-    m_atmosphereProgram->set_float("toneMappingFactor", m_toneMapping * 1.0);
-
-
-    meshes[0]->draw();
-
-
-    // TODO delete later
-    // Render skybox as last
-    //m_skybox->render(view, proj);
+    m_atmosphere->draw(m_deltaTime);
 
     // --------------------------------------------------------------------------
     // ImGUI render
@@ -247,6 +155,13 @@ void Application::render()
 void Application::update()
 {
     m_camera->update(m_deltaTime);
+
+    // Get projection and view matrices defined by the camera
+    //m_projView = m_camera->proj_matrix() * m_camera->view_matrix();
+
+    m_atmosphere->set_projView(m_camera->proj_matrix(), m_camera->view_matrix());
+    m_atmosphere->set_viewPos(m_camera->position());
+
     // TODO
     //if (m_animateCamera)
     //    m_camera->updateAnim(m_deltaTime, R_e + 1);
@@ -279,21 +194,6 @@ void Application::on_key_pressed(GLFWwindow *window, int key, int scancode, int 
     m_keyAction = action;
 
     call_registered(key, action);
-}
-
-/**@brief ImGui: adds "(?)" with hover one the same line as the prev obj */
-static void HelpMarker(const char* desc)
-{
-    ImGui::SameLine();
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::BeginTooltip();
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextUnformatted(desc);
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
-    }
 }
 
 void Application::show_interface()
@@ -334,73 +234,171 @@ void Application::show_interface()
                 m_camera->set_field_of_view(fov);
             if (ImGui::SliderFloat("Near plane", &nearC, 0.f, 10.f))
                 m_camera->set_near_plane_dist(nearC);
-            if (ImGui::SliderFloat("Far plane", &farC, 100.f, 2000.f))
+            if (ImGui::SliderFloat("Far plane", &farC, 100.f, 3000.f))
                 m_camera->set_far_plane_dist(farC);
 
-            // TODO camera preset positions relative to terrain size
+            // TODO camera preset positions relative to the ground
             ImGui::Text("Position Presets");
             ImGui::Separator();
-            if (ImGui::Button("From Top")) { cameraSetPresetTop(); }
+            if (ImGui::Button("On Ground")) { cameraSetPresetOnGround(); }
             ImGui::SameLine();
-            if (ImGui::Button("From Front")) { cameraSetPresetFront(); }
-            ImGui::SameLine();
-            if (ImGui::Button("From Side")) { cameraSetPresetSideWays(); }
+            if (ImGui::Button("Above Atmosphere")) { cameraSetPresetAboveAtmosphere(); }
 
             ImGui::NewLine();
         }
         if (ImGui::CollapsingHeader("Atmosphere Controls", 
                                     ImGuiTreeNodeFlags_DefaultOpen))
         {
+            static glm::vec3 sunDir = m_atmosphere->get_sunDir();
+            static float R_e = m_atmosphere->get_earthRadius();
+            static float R_a = m_atmosphere->get_atmosRadius();
+
+            if (ImGui::TreeNodeEx("Optical coefficients", 
+                ImGuiTreeNodeFlags_DefaultOpen))
             {
-              // TODO animate
-                // TODO presets or defaults
-
-
-                ImGui::Text("Accuracy of rays"); // ?? TODO
-                ImGui::SliderInt("View Samples", &viewSamples, 1, 64); 
-                ImGui::SliderInt("Light Samples", &lightSamples, 1, 64);
+                static float I_sun = m_atmosphere->get_sunIntensity();
+                bool animateSun = m_atmosphere->is_animateSun();
+                static glm::vec3 beta_R = m_atmosphere->get_rayleighScattering();
+                static float H_R = m_atmosphere->get_rayleighScaleHeight();
+                static float beta_M = m_atmosphere->get_mieScattering();
+                static float H_M = m_atmosphere->get_mieScaleHeight();
+                static float g = m_atmosphere->get_mieScatteringDir();
+                static float sunAngle = m_atmosphere->get_sunAngle();
 
                 ImGui::Separator();
                 ImGui::Text("Sun properties");
-                ImGui::DragFloat3("Sun Direction", glm::value_ptr(sunPos), 0.1);
-                ImGui::SliderFloat("Sun Intensity", &I_sun, 0.01, 100.);
-                ImGui::Checkbox(" Animate ", &m_animateSun);
-                ImGui::Checkbox(" Tone mapping ", &m_toneMapping);
-
-                ImGui::Separator();
-                ImGui::Text("Earth properties [km]");
-
-                ImGui::SliderFloat("Earth radius", &R_e, 1., 10000);
-                ImGui::SliderFloat("Atmosphere radius", &R_a, 1., 10000);
+                ImGui::SameLine();
+                if (ImGui::Button("Defaults##sun")) {
+                    m_atmosphere->set_sunDefaults();
+                    sunDir = m_atmosphere->get_sunDir();
+                    I_sun = m_atmosphere->get_sunIntensity();
+                    sunAngle = m_atmosphere->get_sunAngle();
+                    animateSun = m_atmosphere->is_animateSun();
+                }
+                if (ImGui::SliderFloat("Sun Intensity", &I_sun, 0.01, 100.)) {
+                    m_atmosphere->set_sunIntensity(I_sun);
+                }
+                if (ImGui::SliderAngle("Sun Angle", &sunAngle, -10.f, 190.f)) {
+                    m_atmosphere->set_animateSun(false);
+                    m_atmosphere->set_sunAngle(sunAngle);
+                }
+                if (ImGui::Checkbox(" Animate ", &animateSun)) {
+                    m_atmosphere->set_animateSun(animateSun);
+                }
 
                 ImGui::Separator();
                 ImGui::Text("Rayleigh Scattering");
-                ImGui::DragFloat3("Coefficient", glm::value_ptr(beta_R), 
-                                   1e-4f, 0.0, 1.0, "%.4f");
-                ImGui::SliderFloat("Scale height", &H_R, 1.0, 1e4f);
+                HelpMarker("Simulates scattering on small particles of air.");
+                ImGui::SameLine();
+                if (ImGui::Button("Defaults##ray")) {
+                    m_atmosphere->set_rayleighDefaults();
+                    beta_R = m_atmosphere->get_rayleighScattering();
+                    H_R = m_atmosphere->get_rayleighScaleHeight();
+                }
+                if (ImGui::DragFloat3("Coefficient", glm::value_ptr(beta_R), 
+                                   1e-4f, 0.0, 1.0, "%.4f")) {
+                    m_atmosphere->set_rayleighScattering(beta_R);
+                }
+                HelpMarker("Scattering coefficient for wavelengths of red, green,\n"
+                           "and blue light.\n"
+                           "The less for a certain wavelength, the more prominent\n"
+                           "(less out-scattered) its color, in [m^-1]");
+                if (ImGui::SliderFloat("Scale height", &H_R, 1.0, R_a - R_e)) {
+                    m_atmosphere->set_rayleighScaleHeight(H_R);
+                }
+                HelpMarker("Altitude by which the density of the atmosphere\n"
+                           "decreases by a factor of e, in [km]");
+                ImGui::Separator();
+
+                ImGui::Text("Mie Scattering");
+                ImGui::SameLine();
+                HelpMarker("Simulates scattering on aerosols, i.e. larger particles\n"
+                           "of air.");
+                if (ImGui::Button("Defaults##mie")) {
+                    m_atmosphere->set_mieDefaults();
+                    beta_M = m_atmosphere->get_mieScattering();
+                    H_M = m_atmosphere->get_mieScaleHeight();
+                    g = m_atmosphere->get_mieScatteringDir();
+                }
+                if (ImGui::SliderFloat("Coefficient", &beta_M, 1e-3f, 1.f)) {
+                    m_atmosphere->set_mieScattering(beta_M);
+                }
+                HelpMarker("Scattering coefficient for wavelength of visible light,\n"
+                           "the higher the value, the foggier it gets, in [m^-1]");
+                if (ImGui::SliderFloat("Scale height##mie", &H_M, 1.0f, R_a - R_e)) {
+                    m_atmosphere->set_mieScaleHeight(H_M);
+                }
+                HelpMarker("Altitude by which the density of the atmosphere\n"
+                           "decreases by a factor of e, in [km]");
+                if (ImGui::SliderFloat("Anisotropy", &g, 0.01f, 1.0f)) {
+                    m_atmosphere->set_mieScatteringDir(g);
+                }
+                HelpMarker("Directivity of the light in the medium, higher\n"
+                           "values result in stronger forward directivity");
+
+                if (ImGui::Button("All to Defaults")) {
+                    m_atmosphere->set_defaults();
+                    sunDir = m_atmosphere->get_sunDir();
+                    R_e = m_atmosphere->get_earthRadius();
+                    R_a = m_atmosphere->get_atmosRadius();
+                    I_sun = m_atmosphere->get_sunIntensity();
+                    animateSun = m_atmosphere->is_animateSun();
+                    beta_R = m_atmosphere->get_rayleighScattering();
+                    H_R = m_atmosphere->get_rayleighScaleHeight();
+                    beta_M = m_atmosphere->get_mieScattering();
+                    H_M = m_atmosphere->get_mieScaleHeight();
+                    g = m_atmosphere->get_mieScatteringDir();
+                    sunAngle = m_atmosphere->get_sunAngle();
+                }
+                ImGui::TreePop();
+            }
+
+            ImGui::Separator();
+            if (ImGui::TreeNode("Render options (Dangerous)"))
+            {
+                static int viewSamples = m_atmosphere->get_viewSamples();
+                static int lightSamples = m_atmosphere->get_lightSamples();
+                static bool toneMapping = m_atmosphere->is_toneMapping();
+                static bool renderEarth = m_atmosphere->is_renderEarth();
+
+                ImGui::Text("Quality options");
+                if (ImGui::DragFloat3("Sun Direction", glm::value_ptr(sunDir), 0.1)) {
+                    m_atmosphere->set_animateSun(false);
+                    m_atmosphere->set_sunDir(sunDir);
+                }
+                if (ImGui::SliderInt("View Samples", &viewSamples, 1, 64)) {
+                    m_atmosphere->set_viewSamples(viewSamples);
+                }
+                if (ImGui::SliderInt("Light Samples", &lightSamples, 1, 64)) {
+                    m_atmosphere->set_lightSamples(lightSamples);
+                }
+                if (ImGui::Checkbox(" Tone mapping ", &toneMapping)) {
+                    m_atmosphere->set_toneMapping(toneMapping);
+                }
+                ImGui::Separator();
 
                 ImGui::Separator();
-                ImGui::Text("Mie Scattering");
-                ImGui::SliderFloat("Coefficient", &beta_M, 1e-3, 1.);
-                ImGui::SliderFloat("Scale height#", &H_M, 1.0, 1e4f);
-                ImGui::SliderFloat("Anisotropy (Direction)", &g, 0.1, 1.0);
-
-
-                if (ImGui::Button("Defaults"))
-                {
-                    viewSamples = defViewSamples;
-                    lightSamples = defLightSamples;
-                    sunPos = sunDir;
-                    I_sun = e_I_sun;
-                    R_e = e_R_e;
-                    R_a = e_R_a;
-                    beta_R = e_beta_R;
-                    beta_M = e_beta_M;
-                    H_R = e_H_R;
-                    H_M = e_H_M;
-                    g = e_g;
+                ImGui::Text("Planet properties [km]");
+                ImGui::SameLine();
+                if (ImGui::Button("Defaults##pl")) {
+                    m_atmosphere->set_sizeDefaults();
+                    R_e = m_atmosphere->get_earthRadius();
+                    R_a = m_atmosphere->get_atmosRadius();
+                    renderEarth = m_atmosphere->is_renderEarth();
+                }
+                if (ImGui::SliderFloat("Earth radius", &R_e, 1., 10000)) {
+                    m_atmosphere->set_earthRadius(R_e);
+                    if (R_e > R_a)
+                        R_a = R_e; 
+                }
+                if (ImGui::SliderFloat("Atmosphere radius", &R_a, R_e, 10000)) {
+                    m_atmosphere->set_atmosRadius(R_a);
+                }
+                if (ImGui::Checkbox(" Render Ground ", &renderEarth)) {
+                    m_atmosphere->set_renderEarth(renderEarth);
                 }
 
+                ImGui::TreePop();
             }
             ImGui::Separator();
         }
@@ -428,10 +426,9 @@ void Application::status_window()
     // frametime and FPS
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
                 1000.0f / io.Framerate, io.Framerate);
-    ImGui::Text("? vertices, ? indices (? triangles)");
-    //ImGui::Text("%d vertices, %d indices (%d triangles)", 
-    //            m_terrain->totalVertices(), m_terrain->totalIndices(),
-    //            m_terrain->totalTriangles());
+    ImGui::Text("%u vertices, %u indices (%u triangles)", 
+                m_totalVertices, m_totalIndices, 
+                (uint32_t)(m_totalIndices / 3));
 
     ImGui::End();
 }
@@ -460,27 +457,38 @@ void Application::set_vsync(bool enabled)
         glfwSwapInterval(0);
 }
 
-void Application::cameraSetPresetTop()
+/**@brief ImGui: adds "(?)" with hover one the same line as the prev obj */
+static void HelpMarker(const char* desc)
 {
-    m_camera->set_position(glm::vec3(5,20,0));
-    m_camera->set_pitch(-89);
-    m_camera->set_yaw(270);
-    m_camera->set_field_of_view(45);
+    ImGui::SameLine();
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
 }
 
-void Application::cameraSetPresetFront()
+void Application::cameraSetPresetOnGround()
 {
-    m_camera->set_position(glm::vec3(0,5,13));
-    m_camera->set_pitch(-22);
+    m_camera->set_position(glm::vec3(0, 
+                           m_atmosphere->get_earthRadius() -1,
+                           30));
+    m_camera->set_pitch(20);
     m_camera->set_yaw(270);
-    m_camera->set_field_of_view(45);
+    m_camera->set_field_of_view(glm::radians(60.0));
 }
 
-void Application::cameraSetPresetSideWays()
+void Application::cameraSetPresetAboveAtmosphere()
 {
-    m_camera->set_position(glm::vec3(7,11,12));
-    m_camera->set_pitch(-40);
-    m_camera->set_yaw(245);
-    m_camera->set_field_of_view(45);
+    m_camera->set_position(glm::vec3(0, 
+                           m_atmosphere->get_atmosRadius(),
+                           30));
+    m_camera->set_pitch(-10);
+    m_camera->set_yaw(270);
+    m_camera->set_field_of_view(glm::radians(60.0));
 }
 

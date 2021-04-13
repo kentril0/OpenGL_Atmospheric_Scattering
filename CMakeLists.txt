@@ -5,7 +5,6 @@
 #
 # Project directory tree (approx., may not be up to date):
 # ./
-#  |-- images/
 #  |-- src/
 #  |   |-- core/
 #  |   |-- libs/
@@ -21,7 +20,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Project name
-project(app)
+project(demo)
 
 # Specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -41,7 +40,6 @@ set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
     set(SRC_OPENGL_DIR  "${SRC_DIR}/opengl")
     set(SRC_SCENE_DIR   "${SRC_DIR}/scene")
     set(SRC_SHADERS_DIR "${SRC_DIR}/shaders")
-set(IMAGES_DIR "${CMAKE_SOURCE_DIR}/images")
 set(OBJECTS_DIR "${CMAKE_SOURCE_DIR}/objects")
 
 
@@ -160,11 +158,21 @@ set(sources
     "${SRC_OPENGL_DIR}/texture2d.cpp"
     "${SRC_OPENGL_DIR}/vertex_array.cpp"
     "${SRC_SCENE_DIR}/camera.cpp"
-    "${SRC_SCENE_DIR}/skybox.cpp"
     "${SRC_SCENE_DIR}/mesh.cpp"
 )
 
 #--------------------------------------------------------------------------------
+# TODO for Windows 10 standalone exe
+
+if(WIN32)
+    set(CMAKE_CXX_STANDARD_LIBRARIES 
+       "-static-libgcc -static-libstdc++ -lwsock32 -lws2_32 
+       ${CMAKE_CXX_STANDARD_LIBRARIES}")
+
+    set(CMAKE_EXE_LINKER_FLAGS 
+       "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,--no-whole-archive")
+endif()
+
 add_executable(${CMAKE_PROJECT_NAME} ${sources})
 
 add_dependencies(${CMAKE_PROJECT_NAME}
@@ -203,13 +211,6 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
     ${SRC_SHADERS_DIR}
     ${PROJECT_BINARY_DIR}/shaders
     COMMENT "Copy shaders to build tree")
-
-# TODO
-add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${IMAGES_DIR}
-    ${PROJECT_BINARY_DIR}/images
-    COMMENT "Copy images to build tree")
 
 # TODO maybe a bad idea
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD

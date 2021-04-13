@@ -8,8 +8,13 @@
 
 #pragma once
 
-//#include <iostream>
+#include <fstream>
+#include <chrono>
+#include <ctime>
 #include <iomanip>
+
+#define LOG_FILE "log.txt"
+
 
 // Logging levels from highest to lowest
 #define LEVEL_OK        0
@@ -30,14 +35,15 @@
 #define COLOR_YELLOW    "\u001b[33m"
 #define COLOR_GREEN     "\u001b[32m"
 
+extern std::ofstream logFile;
 
 /**
  * @brief Returns current system time
  */
 auto inline curtime()
 {
-    time_t t = time(0);
-    return std::put_time((localtime(&t)), "%T");
+    std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    return std::put_time((localtime(&now)), "%T");
 }
 
 // ----------------------------------------
@@ -62,7 +68,8 @@ auto inline curtime()
 ///< LOG_INFO(text)
 #if LOG_LEVEL <= LEVEL_INFO
     #define LOG_INFO(x) do {                                                 \
-        std::cerr << '[' << curtime() << "]: " << x << std::endl; } while(0)
+        std::cerr << '[' << curtime() << "]: " << x << std::endl;  \
+        logFile << '[' << curtime() << "]: " << x << std::endl; } while(0)
 #else
     #define LOG_INFO(x) do { } while(0)
 #endif

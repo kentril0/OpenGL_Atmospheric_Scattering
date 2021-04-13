@@ -12,6 +12,7 @@
 
 #include <GLFW/glfw3.h>
 
+std::ofstream logFile;
 
 // GLFW handler functions
 void on_resize(GLFWwindow *window, int width, int height);
@@ -35,12 +36,15 @@ int main(void)
     const size_t initial_width = SCREEN_INIT_WIDTH;
     const size_t initial_height = SCREEN_INIT_HEIGHT;
 
+    // Initialize error log file
+    logFile.open(LOG_FILE);
+
     // TODO logfile for errors
 
     // Initialize GLFW
     if (!glfwInit())
     {
-        std::cerr << "Could not initialize GLFW!" << std::endl;
+        LOG_ERR("Could not initialize GLFW!");
         return -1;
     }
 
@@ -56,7 +60,7 @@ int main(void)
                                           PROJECT_NAME, NULL, NULL);
     if (!window)
     {
-        std::cerr << "Could not create a window!" << std::endl;
+        LOG_ERR("Could not create a window!");
         glfwTerminate();
         return -1;
     }
@@ -67,7 +71,7 @@ int main(void)
     // Load OpenGL functions
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cerr << "Could not initialize OpenGL context!" << std::endl;
+        LOG_ERR("Could not initialize OpenGL context!");
         return -1;
     }
 
@@ -171,7 +175,7 @@ void APIENTRY opengl_debug_callback(GLenum source, GLenum type, GLuint id,
       case GL_DEBUG_TYPE_ERROR:
       case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
       case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-          std::cerr << message << std::endl;
+          LOG_ERR(message);
           return;
       default:
           return;

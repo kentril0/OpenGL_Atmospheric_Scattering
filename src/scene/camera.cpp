@@ -38,7 +38,6 @@ Camera::Camera(float aspect_ratio, const glm::vec3& pos, const glm::vec3& up,
     m_angle(0)
 {
     update();
-    LOG_INFO("m_fov: " << m_fov);
 }
 
 void Camera::on_mouse_move(double x, double y)
