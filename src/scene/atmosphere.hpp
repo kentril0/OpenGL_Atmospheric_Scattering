@@ -261,10 +261,9 @@ private:
     const float e_I_sun = 20.f;
     const float e_R_e = 6360.;       // 6360e3
     const float e_R_a = 6420.;       // 6420e3;
-    const glm::vec3 e_beta_R = glm::vec3(3.8e-3f, 13.5e-3f, 33.1e-3f);
+    const glm::vec3 e_beta_R = glm::vec3(5.8e-3f, 13.5e-3f, 33.1e-3f);
         //(3.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel implementation
         //(5.8e-6f, 13.5e-6f, 33.1e-6f);    // scrathapixel web
-        //(5.5e-3f, 15.0e-3f, 22.4e-3f);    // 
     const float e_beta_M = 21e-3f;          // 21e-6f
     const float e_H_R = 7.994;            // 7994, 100
     const float e_H_M = 1.200;            // 1200, 20

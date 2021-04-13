@@ -167,34 +167,6 @@ void Application::update()
     //    m_camera->updateAnim(m_deltaTime, R_e + 1);
 }
 
-
-void Application::on_resize(GLFWwindow *window, int width, int height)
-{
-    m_width = width;
-    m_height = height;
-    // TODO
-    // glViewport?? glViewport(0, 0, width, height);
-}
-
-void Application::on_mouse_move(GLFWwindow *window, double x, double y) 
-{ 
-    if (m_state == STATE_FREEFLY)
-        m_camera->on_mouse_move(x, y);
-}
-
-void Application::on_mouse_pressed(GLFWwindow *window, int button, int action, int mods)
-{
-
-}
-
-void Application::on_key_pressed(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-    m_key = key;
-    m_keyAction = action;
-
-    call_registered(key, action);
-}
-
 void Application::show_interface()
 {
     if (m_state == STATE_MODIFY)
@@ -310,9 +282,9 @@ void Application::show_interface()
                 ImGui::Separator();
 
                 ImGui::Text("Mie Scattering");
-                ImGui::SameLine();
                 HelpMarker("Simulates scattering on aerosols, i.e. larger particles\n"
                            "of air.");
+                ImGui::SameLine();
                 if (ImGui::Button("Defaults##mie")) {
                     m_atmosphere->set_mieDefaults();
                     beta_M = m_atmosphere->get_mieScattering();
@@ -432,9 +404,42 @@ void Application::status_window()
     ImGui::End();
 }
 
+void Application::on_resize(GLFWwindow *window, int width, int height)
+{
+    m_width = width;
+    m_height = height;
+    // TODO
+    // glViewport?? glViewport(0, 0, width, height);
+}
+
+void Application::on_mouse_move(GLFWwindow *window, double x, double y) 
+{ 
+    if (m_state == STATE_FREEFLY)
+        m_camera->on_mouse_move(x, y);
+}
+
+void Application::on_mouse_pressed(GLFWwindow *window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+        set_state_freefly();
+    }
+    else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+        set_state_modify();
+    }
+}
+
+void Application::on_key_pressed(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    m_key = key;
+    m_keyAction = action;
+
+    call_registered(key, action);
+}
+
 void Application::set_state_modify()
 {
     set_state(STATE_MODIFY);
+    m_camera->key_reset(0);
 
     // Show the cursor
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);

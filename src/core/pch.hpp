@@ -1,5 +1,5 @@
 /**********************************************************
- * < Interative Atmospheric Scattering >
+ * < Interactive Atmospheric Scattering >
  * @author Martin Smutny, xsmutn13@stud.fit.vutbr.cz
  * @date April, 2021
  * @file pch.hpp
@@ -31,7 +31,7 @@
 #define PROJECT_NAME "Interactive Atmospheric Scattering"
 
 // TODO turn on debug outputs
-#define DEBUG
+// #define DEBUG
 
 // TODO enable asserts
 //#define ENABLE_ASSERTS
